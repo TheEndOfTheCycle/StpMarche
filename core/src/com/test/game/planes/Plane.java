@@ -15,6 +15,7 @@ public class Plane {
     public Texture texture;
     //Color color = Color.WHITE;
     int nb_bom = 0;
+    private boolean gameOver = false;
 
     public Plane(int a, int b, int c, int d) {
         this.x0 = a;
@@ -56,6 +57,7 @@ public class Plane {
 
     public void checkCollision(Wall wall) {
         if (collidesWith(wall)) {
+            setGameOver(true);
            } 
     }
 
@@ -67,9 +69,17 @@ public class Plane {
        
             if (collidesWith(zeppelins)) {
                 System.out.println("bom!" + ++nb_bom);
+                setGameOver(true);
                 // Ajoutez ici le code à exécuter en cas de collision avec un zeppelin
             }
         
+    }
+
+    public void setGameOver(boolean gameOver){
+        this.gameOver = gameOver; 
+    }
+    public boolean getGameOver(){
+        return gameOver;
     }
     
 
