@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.Zeppelin;
 
-public  class Plane {
+public abstract class Plane {
 
     private float x;           
     private float y;            

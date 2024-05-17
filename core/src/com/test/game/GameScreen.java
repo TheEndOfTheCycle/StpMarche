@@ -14,9 +14,10 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
+import com.test.game.graphics.Zeppelin;
 import com.test.game.planes.French;
 import com.test.game.planes.Plane;
-import com.test.game.graphics.Zeppelin;
+import com.test.game.planes.Red;
 
 public class GameScreen implements Screen {
     // Caméra et viewport
@@ -28,15 +29,16 @@ public class GameScreen implements Screen {
     private final Texture background;
 
     //Défilement du fond
-    private int backgroundOffset;
+    private final int backgroundOffset;
 
     private final int WORLD_WIDTH = 800;
     private final int WORLD_HEIGHT = 480;
+
+
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
     private final int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight();
     private final float ENEMY_SPAWN_TIME = 0;
-    private final int VIEW_PORT_WIDTH = 800;
-    private final int VIEW_PORT_HEIGHT = 480;
+
     private final Test game;
     private final Array<Plane> FlyingEnemies;
 
@@ -60,12 +62,12 @@ public class GameScreen implements Screen {
         System.out.println(background.getHeight());
         backgroundOffset = 0;
         
-        camera.setToOrtho(false, VIEW_PORT_WIDTH, VIEW_PORT_HEIGHT);
+        camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
         
-        objects = WallParser.parseWalls("Map/text_art_zepplin_version.txt");
-        player = new Plane(PLAYER_START_LINE_X, PLAYER_START_LINE_Y, 100, 80);
+        objects = WallParser.parseWalls("Map/test.txt");
+        player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
         FlyingEnemies = new Array<>();
 
     }
@@ -80,7 +82,7 @@ public class GameScreen implements Screen {
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         // Calculer la largeur totale de la carte
-        int mapWidth = WallParser.calculateMapWidth("Map/text_art_test.txt");
+        int mapWidth = WallParser.calculateMapWidth("Map/test.txt");
 
         // Mettez à jour et dessinez les objets
         for (Object object : objects) {

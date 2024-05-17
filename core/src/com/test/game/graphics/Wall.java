@@ -1,7 +1,6 @@
 package com.test.game.graphics;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.test.game.graphics.MapObjects;
 
 public class Wall extends MapObjects {
     public static final int WIDTH = 14;
