@@ -19,10 +19,6 @@ public class Test extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        //shape = new ShapeRenderer();
-        // Chargez les objets depuis le fichier texte
-       // objects = WallParser.parseWalls("text_art_zepplin_version.txt");
-        //player = new com.test.game.planes.Plane(PLAYER_START_LINE_X, PLAYER_START_LINE_Y, 80, 15);
         Screen mm = new MenuScreen(this);
         addScreen(mm);
         setScreen(mm);

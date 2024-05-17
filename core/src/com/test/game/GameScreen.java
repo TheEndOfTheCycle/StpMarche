@@ -14,24 +14,22 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
-import com.test.game.planes.Enemy0;
+import com.test.game.planes.French;
 import com.test.game.planes.Plane;
-import com.test.game.planes.Zeppelin;
+import com.test.game.graphics.Zeppelin;
 
 public class GameScreen implements Screen {
-    // screen
+    // Caméra et viewport
     private final OrthographicCamera camera;
     private final Viewport viewport;
 
-    // graphics
+    // Graphismes
     private final SpriteBatch batch;
     private final Texture background;
-    // Texture img;
 
-    // timings
+    //Défilement du fond
     private int backgroundOffset;
 
-    // world parameters
     private final int WORLD_WIDTH = 800;
     private final int WORLD_HEIGHT = 480;
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
@@ -42,45 +40,42 @@ public class GameScreen implements Screen {
     private final Test game;
     private final Array<Plane> FlyingEnemies;
 
-    Array<Object> objects; // Maintenant une liste d'objets
-    float scrollSpeed = 200; // Vitesse de défilement
+    Array<Object> objects; // Liste des objects
+    float scrollSpeed = 200.f; 
     ShapeRenderer shape;
 
     Plane player;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
 
+    // Constructeur de la classe
     public GameScreen(final Test game) {
         this.game = game;
         this.game.addScreen(this);
-        // truc
+        
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
 
         background = new Texture("BackGroundImages/montains03.jpg"); // image de fond
         System.out.println(background.getHeight());
         backgroundOffset = 0;
-        // fin
+        
         camera.setToOrtho(false, VIEW_PORT_WIDTH, VIEW_PORT_HEIGHT);
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
-        // Chargez les murs depuis le fichier texte
+        
         objects = WallParser.parseWalls("Map/text_art_zepplin_version.txt");
-        player = new com.test.game.planes.Plane(PLAYER_START_LINE_X, PLAYER_START_LINE_Y, 100, 80);
+        player = new Plane(PLAYER_START_LINE_X, PLAYER_START_LINE_Y, 100, 80);
         FlyingEnemies = new Array<>();
 
     }
 
+    // Génération de la carte
     public void MapGenration() {
         float delta = Gdx.graphics.getDeltaTime();
-
-        // Effacez l'écran
         ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Commencez à dessiner avec ShapeRenderer
-
-        // Commencez à dessiner avec SpriteBatch
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -100,18 +95,15 @@ public class GameScreen implements Screen {
                 }
 
                 // Mettez à jour la position du mur
-                wall.bounds.x = newX;
+                wall.setX(newX);
 
                 // Dessinez le mur avec les nouvelles coordonnées
                 wall.draw(batch);
             } else if (object instanceof Zeppelin) {
-                // Mettez à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à
-                // droite
+                // Mettez à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à droite
                 Zeppelin zep = (Zeppelin) object;
                 zep.setPosition(zep.getPosition().x - scrollSpeed * delta, zep.getPosition().y);
 
-                // Réinitialiser la position du Zeppelin lorsque la carte entière a défilé hors
-                // de l'écran
                 if (zep.getPosition().x < -70) {
                     zep.setPosition(mapWidth, zep.getPosition().y);
                 }
@@ -127,38 +119,22 @@ public class GameScreen implements Screen {
                 Wall wall = (Wall) object;
                 player.checkCollision(wall);
             } else if (object instanceof Zeppelin) {
-                Zeppelin zeppelins =  (Zeppelin) object ; // Crée un tableau contenant uniquement ce zeppelin
+                Zeppelin zeppelins =  (Zeppelin) object ;
                 player.checkCollision(zeppelins);
             }
         }
 
-
-        // Fin du batch
         batch.end();
     }
 
-    public void BackGroundGeneration() {// cette fonction permet de defiler l image en arriere plan(la fonction ne
-                                        // marche pas, a revoir)
-        batch.begin();
-
-        // Draw the scrolling background
-        backgroundOffset++;
-        if (backgroundOffset % WORLD_HEIGHT == 0) {
-            backgroundOffset = 0;
-        }
-        batch.draw(background, 0, -backgroundOffset, WORLD_WIDTH, WORLD_HEIGHT);
-        batch.draw(background, 0, -backgroundOffset + WORLD_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT);
-
-        // End batch rendering
-        batch.end();
-    }
-
-    public void createFlyingEnemy()// cette foncition permet de creer un enemi et l'ajouter a la liste des
-                                   // enmies(plus tard grace a la generecite et en passant en parametre une classe
-                                   // on pourra genrer plusieurs types d'enemies)
-    {
-        Enemy0 avion = new Enemy0(Gdx.graphics.getWidth() - 50, ENEMY_SPAWN_LEVEL_Y - 400, 40, 40, 10);
-        FlyingEnemies.add(avion);
+    public void createFlyingEnemy(){
+        /*
+            cette foncition permet de creer un enemi et l'ajouter a la liste des
+            enmies(plus tard grace a la generecite et en passant en parametre une classe
+            on pourra genrer plusieurs types d'ennemies.
+        */
+        French frenchPlane = new French(Gdx.graphics.getWidth() - 50, ENEMY_SPAWN_LEVEL_Y - 400, 40, 40, 10);
+        FlyingEnemies.add(frenchPlane);
     }
 
     public void SpawnFlyingEnemy(Plane avion) {// fonction permet de dessiner un enemi
@@ -182,38 +158,17 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        // Clear the screen
-        if(player.getGameOver()==false){
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        // Begin batch rendering (ne marche pas a revoir)
-        /*
-         * batch.begin();
-         * 
-         * // Draw the scrolling background
-         * backgroundOffset++;
-         * if (backgroundOffset % WORLD_HEIGHT == 0) {
-         * backgroundOffset = 0;
-         * }
-         * batch.draw(background, 0, -backgroundOffset, WORLD_WIDTH, WORLD_HEIGHT);
-         * batch.draw(background, 0, -backgroundOffset + WORLD_HEIGHT, WORLD_WIDTH,
-         * WORLD_HEIGHT);
-         * 
-         * // End batch rendering
-         * batch.end();
-         */
-        // Render game elements
-        MapGenration(); // Generate the map
-        PlayerGeneration(); // Generate the player-controlled object
-        createFlyingEnemy();
-        SpawnFlyingEnemy(FlyingEnemies.get(0));
-         }
+        if(!player.getGameOver()){
+            Gdx.gl.glClearColor(0, 0, 0, 1);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            MapGenration(); 
+            PlayerGeneration();
+            createFlyingEnemy();
+            SpawnFlyingEnemy(FlyingEnemies.get(0));
+        }
     }
 
-    public void create() {
-
-    }
+    public void create() {}
 
     @Override
     public void dispose() {
@@ -221,8 +176,7 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void resize(int width, int height) {
-    }
+    public void resize(int width, int height) {}
 
     @Override
     public void show() {
@@ -234,18 +188,12 @@ public class GameScreen implements Screen {
     // Du fait que la classe implements Screen, on doit implémenter
     // les méthodes suivantes : même si on les laisse vides...
     @Override
-    public void hide() {
-    }
+    public void hide() {}
 
     @Override
-    public void pause() {
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-    }
-
-    // A la fin du jeu, il est important de bien vider la mémoire de l'ordi
-    // en "disposant" les ressources allouées (en particulier pour les textures)
+    public void resume() {}
 
 }

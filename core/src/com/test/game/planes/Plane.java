@@ -1,4 +1,3 @@
-
 package com.test.game.planes;
 
 import com.badlogic.gdx.Gdx;
@@ -6,85 +5,121 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
+import com.test.game.graphics.Zeppelin;
 
-public class Plane {
-    float x0; // position du plan x
-    int y0; // position sur le plan y
-    int width; // largeur
-    int height; // hauteur
-    public Texture texture;
-    //Color color = Color.WHITE;
-    int nb_bom = 0;
+public  class Plane {
+
+    private float x;           
+    private float y;            
+    private final int width; 
+    private final int height;
+    private Texture texture;
+
     private boolean gameOver = false;
 
-    public Plane(int a, int b, int c, int d) {
-        this.x0 = a;
-        this.y0 = b;
-        this.width = c;
-        this.height = d;
-        this.texture = new Texture(Gdx.files.internal("Planes/red_baron.png"));
+    // Constructeur du Plane
+    public Plane(float x, float y, int width, int height) {
+        setX(x);
+        setY(y);
+        this.width = width;
+        this.height = height;
+        setTexture(new Texture(Gdx.files.internal("Planes/red_baron.png")));
     }
 
-    // Utilisez SpriteBatch pour dessiner la texture
+    // Getters and Setters
+    public float getX() {
+        return x;
+    }
+
+    public final void setX(float x) {
+        this.x = x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public final void setY(float y) {
+        this.y = y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public Texture getTexture() {
+        return texture;
+    }
+
+    public final void setTexture(Texture texture) {
+        this.texture = texture;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
+
+    public boolean getGameOver() {
+        return gameOver;
+    }
+    
+    // Utilisez SpriteBatch pour dessiner la texture des avions
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x0, y0, width, height);
+        batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
+    }
+
+    // Encore en teste pour les ennemies c'est des carres pour le moment 
+    public void draw(ShapeRenderer shape) {
+        shape.rect(getX(), getY(), getWidth(), getHeight());
     }
 
     public void update() {
         // Mise à jour de la position
-        this.x0 = Gdx.input.getX() - (width / 2);
-        this.y0 = (Gdx.graphics.getHeight() - Gdx.input.getY()) - (height / 2);
-        // Reste du code pour empêcher de sortir de l'écran...
-        if (Gdx.graphics.getWidth() < Gdx.input.getX() + (width / 2)) {
-            this.x0 = Gdx.graphics.getWidth() - (width);
+        setX(Gdx.input.getX() - (getWidth() / 2));
+        setY((Gdx.graphics.getHeight() - Gdx.input.getY()) - (getHeight() / 2));
+
+        // Pour ne pas sortir de l'écran sur l'axe des x
+        if (Gdx.graphics.getWidth() < Gdx.input.getX() + (getWidth() / 2)) {
+            setX(Gdx.graphics.getWidth() - getWidth());
         }
-        if (Gdx.input.getX() - (width / 2) < 0) {
-            this.x0 = 0;
+        if (Gdx.input.getX() - (getWidth() / 2) < 0) {
+            setX(0);
         }
-        // pour ne pas sortir sur l'écran sur l axe des y
-        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) < height / 2) {
-            this.y0 = 0;
+        // Pour ne pas sortir de l'écran sur l'axe des y
+        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) < getHeight() / 2) {
+            setY(0);
         }
-        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) + (height / 2) > Gdx.graphics.getHeight()) {
-            this.y0 = Gdx.graphics.getHeight() - height;
+        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) + (getHeight() / 2) > Gdx.graphics.getHeight()) {
+            setY(Gdx.graphics.getHeight() - getHeight());
         }
     }
 
+    // Verification des collisions entre l'avion et le décore 
     public boolean collidesWith(Wall wall) {
-        return (x0 + width >= wall.bounds.x) && (x0 <= (wall.bounds.x + wall.getWidth())) && (y0 + height >= wall.bounds.y)
-                && (y0 <= (wall.bounds.y + wall.getHeight()));
+        return (getX() + getWidth() >= wall.getX()) && (getX() <= (wall.getX() + wall.getWidth())) && (getY() + getHeight() >= wall.getY())
+                && (getY() <= (wall.getY() + wall.getHeight()));
     }
 
+    // Verification des collisions entre l'avion et le décore 
+    public boolean collidesWith(Zeppelin zeppelin) {
+        return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth())) && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
+    }
+
+    // verification des collisions avec le Wall
     public void checkCollision(Wall wall) {
         if (collidesWith(wall)) {
             setGameOver(true);
-           } 
+        }
     }
 
-    public boolean collidesWith(Zeppelin zeppelin) {
-        return (x0 + width >= zeppelin.getX()) && (x0 <= (zeppelin.getX() + zeppelin.getWidth())) && (y0 + height >= zeppelin.getY()) && (y0 <= (zeppelin.getY() + zeppelin.getHeight()));
-    }
-    
+    // verification des collisions avec les zeppelins
     public void checkCollision(Zeppelin zeppelins) {
-       
-            if (collidesWith(zeppelins)) {
-                System.out.println("bom!" + ++nb_bom);
-                setGameOver(true);
-                // Ajoutez ici le code à exécuter en cas de collision avec un zeppelin
-            }
-        
-    }
-
-    public void setGameOver(boolean gameOver){
-        this.gameOver = gameOver; 
-    }
-    public boolean getGameOver(){
-        return gameOver;
-    }
-    
-
-    public void draw(ShapeRenderer shape) {
-        shape.rect(x0, y0, width, height);
-        // shape.setColor(Color.RED);
+        if (collidesWith(zeppelins)) {
+            setGameOver(true);
+        }
     }
 }

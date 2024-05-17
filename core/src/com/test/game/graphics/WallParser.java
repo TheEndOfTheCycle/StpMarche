@@ -5,12 +5,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Array;
-import com.test.game.planes.Zeppelin;
+import com.test.game.graphics.Zeppelin;
 
 public class WallParser {
     public static final char WALL_SYMBOL = '█';
     public static final char HEART_SYMBOL = '♥';
 
+    // Méthode pour analyser le fichier de carte et créer des objets de type Wall et Zeppelin
     public static Array<Object> parseWalls(String fileName) {
         Array<Object> objects = new Array<>();
 
@@ -52,6 +53,7 @@ public class WallParser {
         return objects;
     }
 
+    // Méthode pour calculer la largeur totale de la carte
     public static int calculateMapWidth(String fileName) {
         FileHandle fileHandle = Gdx.files.internal(fileName);
         String[] lines = fileHandle.readString().split("\\r?\\n");
