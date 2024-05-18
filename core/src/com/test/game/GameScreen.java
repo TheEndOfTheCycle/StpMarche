@@ -24,6 +24,7 @@ import com.test.game.explosion.Explosion;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
 import com.test.game.graphics.Zeppelin;
+import com.test.game.planes.Artillery;
 import com.test.game.planes.British;
 import com.test.game.planes.French;
 import com.test.game.planes.Plane;
@@ -69,7 +70,10 @@ public class GameScreen implements Screen {
     private float explosionX, explosionY;
     // Enemies
     private final Array<Plane> FlyingEnemies;
+    private final Array<Artillery> Fire_Support;
+    private final float FIRE_SUPPORT_SPEED = 10;
     float lastEnemySpawnTime;
+    float lastShellSpawnTime;
     long startTime;
     long elapsedTime;
     French BasicEnemy;
@@ -77,6 +81,7 @@ public class GameScreen implements Screen {
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
+    private final int FIRE_SUPPORT_SPAWN = 100;
 
     // Constructeur de la classe
     public GameScreen(final Test game) {
@@ -88,7 +93,7 @@ public class GameScreen implements Screen {
         startTime = TimeUtils.millis();
         background = new Texture("BackGroundImages/montains03.jpg"); // image de fond
         backgroundOffset = 0;
-
+        Fire_Support = new Array<>();
         camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
@@ -135,6 +140,9 @@ public class GameScreen implements Screen {
             // lastEnemySpawnTime);
 
             // System.err.println("yes");
+        }
+        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN) {
+            createSupportEnemy();
         }
     }
 
@@ -306,11 +314,31 @@ public class GameScreen implements Screen {
         lastEnemySpawnTime = elapsedTime;
     }
 
+    public void createSupportEnemy() {
+        Fire_Support.add(new Artillery(MathUtils.random(30, Gdx.graphics.getWidth() - 30), Gdx.graphics.getHeight(), 50,
+                20, FIRE_SUPPORT_SPEED));
+        lastShellSpawnTime = elapsedTime;
+    }
+
     public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
         shape.begin(ShapeRenderer.ShapeType.Filled);
         avion.update();
         avion.draw(shape);
         shape.end();
+    }
+
+    public void UpdateSupportEnemy() {
+        Iterator<Artillery> iter = Fire_Support.iterator();
+        while (iter.hasNext()) {
+            Artillery fire = iter.next();
+            fire.update();
+            if (fire.getY() < 0) {
+                iter.remove();
+            }
+        }
+        for (Artillery fire : Fire_Support) {
+            SpawnFlyingEnemy(fire);
+        }
     }
 
     public void SpawnFlyingEnemy(Plane avion) {// fonction permet de dessiner un enemi
@@ -387,12 +415,13 @@ public class GameScreen implements Screen {
         if (!player.getGameOver()) {
             elapsedTime = TimeUtils.timeSinceMillis(startTime);
             System.err.println("temps passe" + elapsedTime);
-            System.out.println("dernier spawn" + lastEnemySpawnTime);
+            System.out.println("dernier spawn" + lastShellSpawnTime);
             this.update();
             // createFlyingEnemy();
             System.err.println("taille" + FlyingEnemies.size);
             // renderGamePlay();
             UpdateFlyingEnemy();
+            UpdateSupportEnemy();
         } else {
             renderGameOver();
         }
