@@ -9,21 +9,22 @@ import com.test.game.graphics.Zeppelin;
 
 public abstract class Plane {
 
-    private float x;           
-    private float y;            
+    protected float x;           
+    protected float y;            
     private final int width; 
     private final int height;
     private Texture texture;
 
     private boolean gameOver = false;
+    private int hp;
 
     // Constructeur du Plane
-    public Plane(float x, float y, int width, int height) {
+    public Plane(float x, float y, int width, int height, Texture texture) {
         setX(x);
         setY(y);
         this.width = width;
         this.height = height;
-        setTexture(new Texture(Gdx.files.internal("Planes/red_baron.png")));
+        setTexture(texture);
     }
 
     // Getters and Setters
@@ -57,6 +58,14 @@ public abstract class Plane {
 
     public final void setTexture(Texture texture) {
         this.texture = texture;
+    }
+
+    public void setHp(int hp) {
+        this.hp= hp;
+    }
+
+    public int getHp(){
+        return hp;
     }
 
     public void setGameOver(boolean gameOver) {
@@ -104,6 +113,11 @@ public abstract class Plane {
                 && (getY() <= (wall.getY() + wall.getHeight()));
     }
 
+    public boolean collidesWith(Plane avion) {
+        return (getX() + getWidth() >= avion.getX()) && (getX() <= (avion.getX() + avion.getWidth())) && (getY() + getHeight() >= avion.getY())
+                && (getY() <= (avion.getY() + avion.getHeight()));
+    }
+
     // Verification des collisions entre l'avion et le décore 
     public boolean collidesWith(Zeppelin zeppelin) {
         return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth())) && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
@@ -120,6 +134,13 @@ public abstract class Plane {
     // verification des collisions avec les zeppelins
     public boolean checkCollision(Zeppelin zeppelins) {
         if (collidesWith(zeppelins)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean checkCollision(Plane avion) {
+        if (collidesWith(avion)) {
             return true;
         }
         return false;
