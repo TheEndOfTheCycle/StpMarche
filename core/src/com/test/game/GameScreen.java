@@ -1,5 +1,6 @@
 package com.test.game;
 
+import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
@@ -13,14 +14,17 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.test.game.explosion.Explosion;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
 import com.test.game.graphics.Zeppelin;
+import com.test.game.planes.British;
 import com.test.game.planes.French;
 import com.test.game.planes.Plane;
 import com.test.game.planes.Red;
@@ -43,18 +47,15 @@ public class GameScreen implements Screen {
     private final int WORLD_WIDTH = 800;
     private final int WORLD_HEIGHT = 480;
 
-    private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
-    private final int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight();
     private final float ENEMY_SPAWN_TIME = 0;
 
     private final Test game;
-    private final Array<Plane> FlyingEnemies;
 
     Array<Object> objects; // Liste des objects
     float scrollSpeed = 100.f;
     ShapeRenderer shape;
 
-    Plane player;
+    Red player;
     private final Array<Projectile> projectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
@@ -66,7 +67,16 @@ public class GameScreen implements Screen {
     private float explosionElapsedTime = 0f;
     private boolean explosionStarted = false;
     private float explosionX, explosionY;
-    
+    // Enemies
+    private final Array<Plane> FlyingEnemies;
+    float lastEnemySpawnTime;
+    long startTime;
+    long elapsedTime;
+    French BasicEnemy;
+    British AdvancedEnemy;
+    private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
+    private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
+    private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
 
     // Constructeur de la classe
     public GameScreen(final Test game) {
@@ -75,7 +85,7 @@ public class GameScreen implements Screen {
 
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
-
+        startTime = TimeUtils.millis();
         background = new Texture("BackGroundImages/montains03.jpg"); // image de fond
         backgroundOffset = 0;
 
@@ -94,7 +104,8 @@ public class GameScreen implements Screen {
         projectiles = new Array<>();
         explosions = new Array<>();
 
-        // Ajouter un listener d'entrée pour détecter les clics de la souris et la barre d'espace
+        // Ajouter un listener d'entrée pour détecter les clics de la souris et la barre
+        // d'espace
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -114,6 +125,19 @@ public class GameScreen implements Screen {
         });
     }
 
+    public void update() {
+        if (elapsedTime - lastEnemySpawnTime >= FLYING_ENEMY_SPAWN_INTERVAL) {// si la difference entre le temps
+                                                                              // courrant et le temps du dernier
+                                                                              // spawn est superieur au temps de
+                                                                              // génération des enemies
+            createFlyingEnemy();
+            // System.err.println("elapsed time" + elapsedTime + "derneri spawn" +
+            // lastEnemySpawnTime);
+
+            // System.err.println("yes");
+        }
+    }
+
     public void MapGeneration() {
         float delta = Gdx.graphics.getDeltaTime();
         ScreenUtils.clear(0, 0, 0, 1);
@@ -121,7 +145,7 @@ public class GameScreen implements Screen {
 
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        
+
         updateObjects(delta);
         drawObjects();
         checkCollisions();
@@ -150,7 +174,8 @@ public class GameScreen implements Screen {
                     wall.setX(newX);
                 } else if (object instanceof Zeppelin) {
                     Zeppelin zep = (Zeppelin) object;
-                    // Mettre à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à droite
+                    // Mettre à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à
+                    // droite
                     zep.setPosition(zep.getPosition().x - scrollSpeed * delta, zep.getPosition().y);
 
                     if (zep.getPosition().x < -70) {
@@ -202,7 +227,7 @@ public class GameScreen implements Screen {
                 Wall wall = (Wall) object;
                 // Vérifier si la bombe entre en collision avec le mur
                 if (bomb.getX() + Bomb.WIDTH >= wall.getX() && bomb.getX() <= wall.getX() + Wall.WIDTH
-                    && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
+                        && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
                     return true; // Collision détectée avec un mur
                 }
             }
@@ -263,16 +288,22 @@ public class GameScreen implements Screen {
                         continue; // Passer à la prochaine boucle car cette bombe est retirée
                     }
                 }
-                // Si ce n'est pas une bombe ou s'il n'y a pas de collision, dessiner la projectile normalement
-                // Pas besoin de vérifier les collisions pour les balles normales car elles sont censées traverser les murs
+                // Si ce n'est pas une bombe ou s'il n'y a pas de collision, dessiner la
+                // projectile normalement
+                // Pas besoin de vérifier les collisions pour les balles normales car elles sont
+                // censées traverser les murs
             }
         }
     }
 
-    public void createFlyingEnemy() {
-        // Cette fonction permet de créer un ennemi et l'ajouter à la liste des ennemis
-        French frenchPlane = new French(Gdx.graphics.getWidth() - 50, ENEMY_SPAWN_LEVEL_Y - 400, 40, 40, 10);
-        FlyingEnemies.add(frenchPlane);
+    public void createFlyingEnemy()
+
+    {
+
+        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
+        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 10);
+        FlyingEnemies.add(avion);
+        lastEnemySpawnTime = elapsedTime;
     }
 
     public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
@@ -280,6 +311,53 @@ public class GameScreen implements Screen {
         avion.update();
         avion.draw(shape);
         shape.end();
+    }
+
+    public void SpawnFlyingEnemy(Plane avion) {// fonction permet de dessiner un enemi
+        // avion.setStartY(ENEMY_SPAWN_LEVEL_X);
+        // sshape.begin(ShapeRenderer.ShapeType.Filled);
+        batch.begin();
+        avion.draw(batch);
+        batch.end();
+        // on obtient le temps courrent durant le jeu
+    }
+
+    public void UpdateFlyingEnemy() {
+
+        // cette fonction gere les mouvemnts et l'état des enemies
+        Iterator<Plane> iter = FlyingEnemies.iterator();
+        while (iter.hasNext()) {
+            Plane avion = iter.next();
+            // avion.Xspeed = 300;
+            // avion.update();// on met a jour la position de l enemie a chaque fois
+            if (avion instanceof French) {
+                BasicEnemy = (French) avion;
+                // checkEnemyCollision(avion);
+                BasicEnemy.update();
+            }
+            if (avion instanceof British) {
+                AdvancedEnemy = (British) avion;
+                AdvancedEnemy.update();
+            }
+            if (avion.getX() < 20) {
+                // createFlyingEnemy();
+                iter.remove();
+            }
+
+        }
+        // cette boucle permet d afficher les enemies
+        for (Plane avion : FlyingEnemies) {
+            // SpawnFlyingEnemy(avion);
+            if (avion instanceof French) {
+                BasicEnemy = (French) avion;
+                SpawnFlyingEnemy(BasicEnemy);
+            }
+            if (avion instanceof British) {
+                AdvancedEnemy = (British) avion;
+                SpawnFlyingEnemy(avion);
+            }
+        }
+
     }
 
     private void renderExplosions(float delta) {
@@ -307,7 +385,14 @@ public class GameScreen implements Screen {
 
         // Si le jeu n'est pas terminé
         if (!player.getGameOver()) {
-            renderGamePlay();
+            elapsedTime = TimeUtils.timeSinceMillis(startTime);
+            System.err.println("temps passe" + elapsedTime);
+            System.out.println("dernier spawn" + lastEnemySpawnTime);
+            this.update();
+            // createFlyingEnemy();
+            System.err.println("taille" + FlyingEnemies.size);
+            // renderGamePlay();
+            UpdateFlyingEnemy();
         } else {
             renderGameOver();
         }
@@ -326,13 +411,10 @@ public class GameScreen implements Screen {
         player.update();
         player.draw(batch);
         batch.end();
-    
+
         // Créer et dessiner les ennemis
-        createFlyingEnemy();
-        if (FlyingEnemies.size > 0) {
-            spawnFlyingEnemy(FlyingEnemies.get(0));
-        }
-    }    
+
+    }
 
     private void renderGameOver() {
         // Afficher l'animation d'explosion
@@ -341,18 +423,18 @@ public class GameScreen implements Screen {
             explosionY = player.getY();
             explosionStarted = true;
         }
-    
+
         batch.begin();
         explosionElapsedTime += Gdx.graphics.getDeltaTime();
         TextureRegion currentFrame = explosionAnimation.getKeyFrame(explosionElapsedTime, false);
         batch.draw(currentFrame, explosionX, explosionY, player.getWidth(), player.getHeight());
         batch.end();
-    
+
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
         }
     }
-    
+
     @Override
     public void dispose() {
         batch.dispose();
@@ -363,7 +445,8 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void resize(int width, int height) {}
+    public void resize(int width, int height) {
+    }
 
     @Override
     public void show() {
@@ -372,11 +455,14 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void hide() {}
+    public void hide() {
+    }
 
     @Override
-    public void pause() {}
+    public void pause() {
+    }
 
     @Override
-    public void resume() {}
+    public void resume() {
+    }
 }
