@@ -118,24 +118,21 @@ public class GameScreen implements Screen {
         float delta = Gdx.graphics.getDeltaTime();
         ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-    
-        beginMapRendering();
+
+        batch.begin();
+        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        
         updateObjects(delta);
         drawObjects();
         checkCollisions();
-    
-        batch.end();
-    }
 
-    private void beginMapRendering() {
-        batch.begin();
-        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.end();
     }
 
     private void updateObjects(float delta) {
         // Calculer la largeur totale de la carte
         int mapWidth = WallParser.calculateMapWidth("Map/test.txt");
-    
+
         // Mettre à jour les objets
         for (Object object : objects) {
             if (!player.getGameOver()) {
@@ -143,19 +140,19 @@ public class GameScreen implements Screen {
                     Wall wall = (Wall) object;
                     // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
                     float newX = wall.getX() - scrollSpeed * delta;
-    
+
                     // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
                     if (newX < -Wall.WIDTH) {
                         newX += mapWidth;
                     }
-    
+
                     // Mettre à jour la position du mur
                     wall.setX(newX);
                 } else if (object instanceof Zeppelin) {
                     Zeppelin zep = (Zeppelin) object;
                     // Mettre à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à droite
                     zep.setPosition(zep.getPosition().x - scrollSpeed * delta, zep.getPosition().y);
-    
+
                     if (zep.getPosition().x < -70) {
                         zep.setPosition(mapWidth, zep.getPosition().y);
                     }
@@ -170,10 +167,14 @@ public class GameScreen implements Screen {
             if (!player.getGameOver()) {
                 if (object instanceof Wall) {
                     Wall wall = (Wall) object;
-                    player.checkCollision(wall);
+                    if (player.checkCollision(wall)) {
+                        handlePlayerCollision();
+                    }
                 } else if (object instanceof Zeppelin) {
                     Zeppelin zeppelins = (Zeppelin) object;
-                    player.checkCollision(zeppelins);
+                    if (player.checkCollision(zeppelins)) {
+                        handlePlayerCollision();
+                    }
                 } else if (object instanceof Bomb) {
                     Bomb bomb = (Bomb) object;
                     // Vérifier la collision entre la bombe et les éléments de la carte
@@ -186,6 +187,12 @@ public class GameScreen implements Screen {
                 }
             }
         }
+    }
+
+    private void handlePlayerCollision() {
+        // Produire l'animation d'explosion pour le joueur
+        explode(player.getX(), player.getY());
+        player.setGameOver(true); // Marquer le jeu comme terminé
     }
 
     private boolean bombCollision(Bomb bomb) {
@@ -219,7 +226,7 @@ public class GameScreen implements Screen {
             }
         }
     }
-    
+
     private void createBullet() {
         Bullets bullet = new Bullets(player.getX() + player.getWidth(), player.getY() + player.getHeight() / 2, 300f);
         projectiles.add(bullet);
@@ -250,7 +257,7 @@ public class GameScreen implements Screen {
                     Bomb bomb = (Bomb) projectile;
                     if (bombCollision(bomb)) {
                         // Collision détectée avec un mur, retirer la bombe
-                        explode(bomb.getX()- scrollSpeed * delta, bomb.getY());
+                        explode(bomb.getX() - scrollSpeed * delta, bomb.getY());
                         projectiles.removeIndex(i);
                         // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
                         continue; // Passer à la prochaine boucle car cette bombe est retirée
@@ -261,40 +268,25 @@ public class GameScreen implements Screen {
             }
         }
     }
-    
-    
-    
-    
+
     public void createFlyingEnemy() {
         // Cette fonction permet de créer un ennemi et l'ajouter à la liste des ennemis
         French frenchPlane = new French(Gdx.graphics.getWidth() - 50, ENEMY_SPAWN_LEVEL_Y - 400, 40, 40, 10);
         FlyingEnemies.add(frenchPlane);
     }
 
-    public void SpawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
+    public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
         shape.begin(ShapeRenderer.ShapeType.Filled);
         avion.update();
         avion.draw(shape);
         shape.end();
     }
 
-    public void PlayerGeneration() {
-        batch.begin();
-
-        // Mettre à jour et dessiner le joueur
-        player.update();
-        player.draw(batch);
-
-        batch.end();
-    }
-
-   
     private void renderExplosions(float delta) {
         batch.begin();
         for (int i = 0; i < explosions.size; i++) {
             Explosion explosion = explosions.get(i);
             explosion.update(delta);
-            // Passez le décalage de défilement actuel à la méthode draw
             explosion.draw(batch);
             if (explosion.isFinished()) {
                 explosions.removeIndex(i);
@@ -303,7 +295,6 @@ public class GameScreen implements Screen {
         }
         batch.end();
     }
-    
 
     @Override
     public void render(float delta) {
@@ -329,40 +320,38 @@ public class GameScreen implements Screen {
         renderExplosions(delta);
     }
 
-
     private void renderGamePlay() {
-        // Dessiner le joueur
-        PlayerGeneration();
+        // Mettre à jour et dessiner le joueur
+        batch.begin();
+        player.update();
+        player.draw(batch);
+        batch.end();
     
         // Créer et dessiner les ennemis
         createFlyingEnemy();
         if (FlyingEnemies.size > 0) {
-            SpawnFlyingEnemy(FlyingEnemies.get(0));
+            spawnFlyingEnemy(FlyingEnemies.get(0));
         }
     }    
 
     private void renderGameOver() {
-        // Si l'explosion n'a pas encore commencé, initialiser sa position
+        // Afficher l'animation d'explosion
         if (!explosionStarted) {
             explosionX = player.getX();
             explosionY = player.getY();
             explosionStarted = true;
         }
     
-        // Afficher l'animation d'explosion
         batch.begin();
         explosionElapsedTime += Gdx.graphics.getDeltaTime();
         TextureRegion currentFrame = explosionAnimation.getKeyFrame(explosionElapsedTime, false);
         batch.draw(currentFrame, explosionX, explosionY, player.getWidth(), player.getHeight());
         batch.end();
     
-        // Vérifier si l'animation d'explosion est terminée
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
-            
         }
     }
-    
     
     @Override
     public void dispose() {

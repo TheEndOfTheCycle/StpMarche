@@ -110,16 +110,18 @@ public abstract class Plane {
     }
 
     // verification des collisions avec le Wall
-    public void checkCollision(Wall wall) {
+    public boolean checkCollision(Wall wall) {
         if (collidesWith(wall)) {
-            setGameOver(true);
+            return true;
         }
+        return false;
     }
 
     // verification des collisions avec les zeppelins
-    public void checkCollision(Zeppelin zeppelins) {
+    public boolean checkCollision(Zeppelin zeppelins) {
         if (collidesWith(zeppelins)) {
-            setGameOver(true);
+            return true;
         }
+        return false;
     }
 }
