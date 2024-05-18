@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 public abstract class Projectile {
     protected float x, y;
     protected final float speed;
-    protected static Texture texture;
+    protected Texture texture;
 
     public Projectile(float x, float y, float speed, String texturePath) {
         this.x = x;
@@ -26,7 +26,20 @@ public abstract class Projectile {
         return x > Gdx.graphics.getWidth() || x < 0 || y > Gdx.graphics.getHeight() || y < 0;
     }
 
-    public static void dispose() {
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public void dispose() {
         texture.dispose();
+    }
+
+    // Méthode pour définir la position X du projectile
+    public void setX(float x) {
+        this.x = x;
     }
 }

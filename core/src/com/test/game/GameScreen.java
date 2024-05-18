@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.test.game.explosion.Explosion;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
 import com.test.game.graphics.Zeppelin;
@@ -50,7 +51,7 @@ public class GameScreen implements Screen {
     private final Array<Plane> FlyingEnemies;
 
     Array<Object> objects; // Liste des objects
-    float scrollSpeed = 200.f;
+    float scrollSpeed = 100.f;
     ShapeRenderer shape;
 
     Plane player;
@@ -61,9 +62,11 @@ public class GameScreen implements Screen {
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
+    private Array<Explosion> explosions;
     private float explosionElapsedTime = 0f;
     private boolean explosionStarted = false;
     private float explosionX, explosionY;
+    
 
     // Constructeur de la classe
     public GameScreen(final Test game) {
@@ -89,6 +92,7 @@ public class GameScreen implements Screen {
         explosionAnimation = new Animation<>(0.1f, explosionAtlas.getRegions());
 
         projectiles = new Array<>();
+        explosions = new Array<>();
 
         // Ajouter un listener d'entrée pour détecter les clics de la souris et la barre d'espace
         Gdx.input.setInputProcessor(new InputAdapter() {
@@ -170,9 +174,37 @@ public class GameScreen implements Screen {
                 } else if (object instanceof Zeppelin) {
                     Zeppelin zeppelins = (Zeppelin) object;
                     player.checkCollision(zeppelins);
+                } else if (object instanceof Bomb) {
+                    Bomb bomb = (Bomb) object;
+                    // Vérifier la collision entre la bombe et les éléments de la carte
+                    if (bombCollision(bomb)) {
+                        // Produire l'animation d'explosion
+                        explode(bomb.getX(), bomb.getY());
+                        // Retirer la bombe de la liste
+                        objects.removeValue(bomb, true);
+                    }
                 }
             }
         }
+    }
+
+    private boolean bombCollision(Bomb bomb) {
+        // Parcourir tous les murs de la carte pour vérifier la collision avec la bombe
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall wall = (Wall) object;
+                // Vérifier si la bombe entre en collision avec le mur
+                if (bomb.getX() + Bomb.WIDTH >= wall.getX() && bomb.getX() <= wall.getX() + Wall.WIDTH
+                    && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
+                    return true; // Collision détectée avec un mur
+                }
+            }
+        }
+        return false; // Aucune collision détectée avec un mur
+    }
+
+    private void explode(float x, float y) {
+        explosions.add(new Explosion(x, y, explosionAnimation));
     }
 
     private void drawObjects() {
@@ -194,7 +226,7 @@ public class GameScreen implements Screen {
     }
 
     private void createBomb() {
-        Bomb bomb = new Bomb(player.getX() + player.getWidth() / 2, player.getY(), 300f);
+        Bomb bomb = new Bomb(player.getX() + player.getWidth() / 2, player.getY(), 200f);
         projectiles.add(bomb);
     }
 
@@ -212,10 +244,26 @@ public class GameScreen implements Screen {
             projectile.update(delta);
             if (projectile.isOutOfScreen()) {
                 projectiles.removeIndex(i);
-                // Pas besoin d'appeler projectile.dispose() ici car la texture est partagée et sera disposée une fois
+            } else {
+                // Vérifier les collisions avec les murs
+                if (projectile instanceof Bomb) {
+                    Bomb bomb = (Bomb) projectile;
+                    if (bombCollision(bomb)) {
+                        // Collision détectée avec un mur, retirer la bombe
+                        explode(bomb.getX()- scrollSpeed * delta, bomb.getY());
+                        projectiles.removeIndex(i);
+                        // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
+                        continue; // Passer à la prochaine boucle car cette bombe est retirée
+                    }
+                }
+                // Si ce n'est pas une bombe ou s'il n'y a pas de collision, dessiner la projectile normalement
+                // Pas besoin de vérifier les collisions pour les balles normales car elles sont censées traverser les murs
             }
         }
     }
+    
+    
+    
     
     public void createFlyingEnemy() {
         // Cette fonction permet de créer un ennemi et l'ajouter à la liste des ennemis
@@ -240,9 +288,26 @@ public class GameScreen implements Screen {
         batch.end();
     }
 
+   
+    private void renderExplosions(float delta) {
+        batch.begin();
+        for (int i = 0; i < explosions.size; i++) {
+            Explosion explosion = explosions.get(i);
+            explosion.update(delta);
+            // Passez le décalage de défilement actuel à la méthode draw
+            explosion.draw(batch);
+            if (explosion.isFinished()) {
+                explosions.removeIndex(i);
+                i--; // Réajuster l'index après suppression
+            }
+        }
+        batch.end();
+    }
+    
+
     @Override
     public void render(float delta) {
-         // Effacer l'écran
+        // Effacer l'écran
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -259,7 +324,11 @@ public class GameScreen implements Screen {
         // Mettre à jour et dessiner les projectiles
         updateProjectiles(delta);
         drawProjectiles();
+
+        // Dessiner les explosions
+        renderExplosions(delta);
     }
+
 
     private void renderGamePlay() {
         // Dessiner le joueur
@@ -290,14 +359,15 @@ public class GameScreen implements Screen {
         // Vérifier si l'animation d'explosion est terminée
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
+            
         }
     }
+    
     
     @Override
     public void dispose() {
         batch.dispose();
         explosionAtlas.dispose();
-        Bullets.dispose();  // Disposer de la texture partagée
         for (Projectile projectile : projectiles) {
             projectile.dispose();
         }
