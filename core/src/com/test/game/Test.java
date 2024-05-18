@@ -7,9 +7,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 
 public class Test extends Game {
+    
     SpriteBatch batch;
     
-
     private final Array<Screen> screens = new Array<>();
 
     public void addScreen(Screen screen) {
