@@ -119,7 +119,7 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (button == Buttons.LEFT) {
+                if (!player.getGameOver() && button == Buttons.LEFT) {
                     createBullet();
                 }
                 return true;
@@ -127,7 +127,7 @@ public class GameScreen implements Screen {
 
             @Override
             public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.SPACE) {
+                if (!player.getGameOver() && keycode == Input.Keys.SPACE) {
                     createBomb();
                 }
                 return true;
