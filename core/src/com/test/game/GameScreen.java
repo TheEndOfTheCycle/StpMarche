@@ -65,7 +65,7 @@ public class GameScreen implements Screen {
     private final Array<Projectile> projectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
-
+    
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
