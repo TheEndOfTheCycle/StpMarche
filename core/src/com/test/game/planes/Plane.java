@@ -15,7 +15,8 @@ public class Plane {
     private final int width;
     private final int height;
     private Texture texture;
-
+    private boolean isFireHit = false;// cette variable permet de savoir si l'avion est touche par un projectile
+    private boolean deadByFireHit = false;// mort par projectile du joueur ou pas
     private boolean gameOver = false;
     private int hp;
 
@@ -26,6 +27,22 @@ public class Plane {
         this.width = width;
         this.height = height;
         setTexture(texture);
+    }
+
+    public void setIsFireHit(boolean etat) {
+        this.isFireHit = etat;
+    }
+
+    public boolean getIsFireHit() {
+        return isFireHit;
+    }
+
+    public void setIsDeadByFireHit(boolean etat) {
+        this.deadByFireHit = etat;
+    }
+
+    public boolean getIsDeadByFireHit() {
+        return isFireHit;
     }
 
     // Getters and Setters

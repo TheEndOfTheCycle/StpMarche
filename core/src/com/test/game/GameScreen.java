@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -40,11 +41,10 @@ public class GameScreen implements Screen {
     // Caméra et viewport
     private final OrthographicCamera camera;
     private final Viewport viewport;
-
     // Graphismes
     private final SpriteBatch batch;
     private final Texture background;
-
+    private BitmapFont scoreFont;
     // Défilement du fond
     private final int backgroundOffset;
 
@@ -58,7 +58,7 @@ public class GameScreen implements Screen {
     Array<Object> objects; // Liste des objects
     float scrollSpeed = 100.f;
     ShapeRenderer shape;
-
+    private int score = 0;
     Red player;
     private final Array<Projectile> projectiles;
     final int PLAYER_START_LINE_Y = 200;
@@ -100,7 +100,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
-
+        scoreFont = new BitmapFont();
         objects = WallParser.parseWalls("Map/test.txt");
         player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
         FlyingEnemies = new Array<>();
@@ -254,12 +254,22 @@ public class GameScreen implements Screen {
         return false;
     }
 
+    // cette fonction va gerer les avoins lorsque ils se prennent des degats
     public void handleDamagedFlyingEnemy() {
         for (Projectile tire : projectiles) {
             for (Plane avion : FlyingEnemies) {
                 if (avion.collidesWith(tire)) {
                     avion.setHp(avion.getHp() - 1);
                     tire.setHit(true);
+                    if (avion.getHp() == 0) {
+                        avion.setIsDeadByFireHit(true);
+                        // System.err.println("mort par tire");
+                        if (avion instanceof French) {
+                            score += French.getScoreValue();
+                        }
+                    } else {
+                        System.out.println("nonnnn");
+                    }
                 }
             }
         }
@@ -409,6 +419,7 @@ public class GameScreen implements Screen {
     public void UpdateFlyingEnemy() {
 
         // cette fonction gere les mouvemnts et l'état des enemies
+        handleDamagedFlyingEnemy();
         Iterator<Plane> iter = FlyingEnemies.iterator();
         while (iter.hasNext()) {
             Plane avion = iter.next();
@@ -430,7 +441,9 @@ public class GameScreen implements Screen {
             if (avion.getHp() == 0) {
                 explode(avion.getX(), avion.getY());
                 iter.remove();
+
             }
+            // on va gerer le score
 
         }
         // cette boucle permet d afficher les enemies
@@ -478,7 +491,7 @@ public class GameScreen implements Screen {
             // System.out.println("dernier spawn" + lastShellSpawnTime);
             this.update();
             // createFlyingEnemy();
-            System.err.println("taille" + FlyingEnemies.size);
+            // System.err.println("taille" + FlyingEnemies.size);
             renderGamePlay();
             UpdateFlyingEnemy();
             UpdateSupportEnemy();
@@ -501,7 +514,7 @@ public class GameScreen implements Screen {
         player.update();
         player.draw(batch);
         player.drawHealth(batch);
-        handleDamagedFlyingEnemy();
+        scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
         batch.end();
 
         // Créer et dessiner les ennemis
