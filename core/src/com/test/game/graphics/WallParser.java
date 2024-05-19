@@ -10,6 +10,7 @@ public class WallParser {
     public static final char WALL_SYMBOL = '█';
     public static final char HEART_SYMBOL = '♥';
     public static final char GRASS_SYMBOL = '▓';
+    public static final char CLUB_SYMBOL = '♣'; 
 
     // Méthode pour analyser le fichier de carte et créer des objets de type Wall et Zeppelin
     public static Array<Object> parseWalls(String fileName) {
@@ -42,6 +43,11 @@ public class WallParser {
                         int xPos = x * Wall.WIDTH;
                         int yPos = (lines.length - 1 - y) * Wall.HEIGHT;
                         objects.add(new Zeppelin(xPos, yPos)); // Ajout d'un Zeppelin à la liste
+                        break;
+                    }case CLUB_SYMBOL: { 
+                        int xPos = x * Wall.WIDTH;
+                        int yPos = (lines.length - 1 - y) * Wall.HEIGHT;
+                        objects.add(new AntiAir(xPos, yPos)); 
                         break;
                     }
                     default:

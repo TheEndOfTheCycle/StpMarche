@@ -3,6 +3,7 @@ package com.test.game.explosion;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.test.game.GameScreen;
 
 public class Explosion {
     private float x, y;
@@ -20,7 +21,7 @@ public class Explosion {
     }
 
     public void update(float delta) {
-        x -= 100f * delta;
+        x -= GameScreen.getScrollSpeed() * delta;
         elapsedTime += delta;
         if (animation.isAnimationFinished(elapsedTime)) {
             finished = true;

@@ -2,11 +2,11 @@ package com.test.game.shoots;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public class Bullets extends Projectile {
+public class SolAir extends Projectile {
     private float angle;
 
-    public Bullets(float x, float y, float speed, float angle) {
-        super(x, y, speed, "Amo/bullets.png");
+    public SolAir(float x, float y, float speed, float angle) {
+        super(x, y, speed, "Amo/solair.png");
         this.angle = angle;
     }
 
@@ -19,7 +19,7 @@ public class Bullets extends Projectile {
     @Override
     public void draw(SpriteBatch batch) {
         // Dessiner le projectile ici
-        batch.draw(texture, x, y);
+        batch.draw(texture, x, y, 50,50);
     }
 }
 
