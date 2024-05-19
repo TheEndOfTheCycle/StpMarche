@@ -54,7 +54,7 @@ public class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 480;
 
     private final float ENEMY_SPAWN_TIME = 0;
-    private final float FRENCH_ENEMY_SPEED = 1;
+    private final float FRENCH_ENEMY_SPEED = 1; // // Hello A MODIF
     private final Test game;
 
     Array<Object> objects; // Liste des objects
@@ -65,7 +65,7 @@ public class GameScreen implements Screen {
     private final Array<Projectile> projectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
-
+    
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
