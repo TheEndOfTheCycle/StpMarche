@@ -156,7 +156,7 @@ public class GameScreen implements Screen {
 
         updateObjects(delta);
         drawObjects();
-        checkCollisions();
+        checkPlayerCollisions();
 
         batch.end();
     }
@@ -194,7 +194,7 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void checkCollisions() {
+    private void checkPlayerCollisions() {
         // Vérifier les collisions entre le joueur et les murs
         for (Object object : objects) {
             if (!player.getGameOver()) {
@@ -218,8 +218,37 @@ public class GameScreen implements Screen {
                         objects.removeValue(bomb, true);
                     }
                 }
+                for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie
+                    if (player.checkCollision(avion)) {
+                        handlePlayerCollision();
+                    }
+                }
             }
         }
+
+    }
+
+    public boolean checkEnemyCollision(Plane avion) {
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall mur = (Wall) object;
+                if (avion.checkCollision(mur)) {
+                    return true;
+                }
+            }
+
+            if (object instanceof Zeppelin) {
+                Zeppelin zepp = (Zeppelin) object;
+                if (avion.checkCollision(zepp)) {
+                    return true;
+                }
+            }
+
+        }
+        if (player.checkCollision(avion)) {
+            return true;
+        }
+        return false;
     }
 
     private void handlePlayerCollision() {
@@ -308,8 +337,12 @@ public class GameScreen implements Screen {
 
     {
 
-        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
+        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
         Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 10);
+        while (checkEnemyCollision(avion)) {
+            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
+            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 10);
+        }
         FlyingEnemies.add(avion);
         lastEnemySpawnTime = elapsedTime;
     }
