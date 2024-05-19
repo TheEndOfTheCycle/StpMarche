@@ -528,7 +528,10 @@ public class GameScreen implements Screen {
         drawProjectiles();
 
         // Dessiner les explosions
-        renderExplosions(delta);
+        if(!player.getGameOver()){
+            renderExplosions(delta);
+        }
+        
     }
 
     private void renderGamePlay() {
