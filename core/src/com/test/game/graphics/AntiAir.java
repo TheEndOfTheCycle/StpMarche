@@ -25,7 +25,7 @@ public class AntiAir extends MapObjects  {
    // Méthode pour tirer vers l'avion
 public void shootAt(Plane target, Array<Projectile> projectiles) {
     float angle = calculateAngle(getX(), getY(), target.getX(), target.getY());
-    SolAir bullet = new SolAir(getX(), getY() + 76, 400f, angle);
+    SolAir bullet = new SolAir(getX(), getY() + RED_HEIGHT, 400f, angle);
     projectiles.add(bullet);
 }
 
