@@ -89,6 +89,9 @@ public class GameScreen implements Screen {
     private final int FIRE_SUPPORT_SPAWN = 4000;
 
     private TextureRegion backgroundRegion;
+    private final Array<Projectile> enemyProjectiles;
+    
+
     // Constructeur de la classe
     public GameScreen(final Test game) {
         this.game = game;
@@ -108,6 +111,8 @@ public class GameScreen implements Screen {
         objects = WallParser.parseWalls("Map/test.txt");
         player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
         FlyingEnemies = new Array<>();
+        enemyProjectiles = new Array<>();
+
 
         // Charger l'animation d'explosion
         explosionAtlas = new TextureAtlas(Gdx.files.internal("atlas/kisspng-sprite-explosion_pack.atlas"));
@@ -359,8 +364,12 @@ public class GameScreen implements Screen {
         for (Projectile projectile : projectiles) {
             projectile.draw(batch);
         }
+        for (Projectile projectile : enemyProjectiles) {
+            projectile.draw(batch);
+        }
         batch.end();
     }
+    
 
     private void updateProjectiles(float delta) {
         for (int i = 0; i < projectiles.size; i++) {
@@ -368,25 +377,23 @@ public class GameScreen implements Screen {
             projectile.update(delta);
             if (projectile.isOutOfScreen() || projectile.getHit() == true) {
                 projectiles.removeIndex(i);
+            } else if (projectile instanceof Bomb && bombCollision((Bomb) projectile)) {
+                explode(projectile.getX(), projectile.getY());
+                projectiles.removeIndex(i);
+            }
+        }
+        for (int i = 0; i < enemyProjectiles.size; i++) {
+            Projectile projectile = enemyProjectiles.get(i);
+            projectile.update(Gdx.graphics.getDeltaTime());
+            if (projectile.isOutOfScreen() || projectile.getHit() == true) {
+                enemyProjectiles.removeIndex(i);
             } else {
-                // Vérifier les collisions avec les murs
-                if (projectile instanceof Bomb) {
-                    Bomb bomb = (Bomb) projectile;
-                    if (bombCollision(bomb)) {
-                        // Collision détectée avec un mur, retirer la bombe
-                        explode(bomb.getX() - scrollSpeed * delta, bomb.getY());
-                        projectiles.removeIndex(i);
-                        // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
-                        continue; // Passer à la prochaine boucle car cette bombe est retirée
-                    }
-                }
-                // Si ce n'est pas une bombe ou s'il n'y a pas de collision, dessiner la
-                // projectile normalement
-                // Pas besoin de vérifier les collisions pour les balles normales car elles sont
-                // censées traverser les murs
+                // Vous pouvez ajouter des vérifications de collision avec le joueur ici
+                // par exemple: if (player.checkCollision(projectile)) { handlePlayerCollision(); }
             }
         }
     }
+    
 
     public void createFlyingEnemy()
 
@@ -439,38 +446,25 @@ public class GameScreen implements Screen {
     }
 
     public void UpdateFlyingEnemy() {
-
-        // cette fonction gere les mouvemnts et l'état des enemies
+        // Cette fonction gère les mouvements et l'état des ennemis
         handleDamagedFlyingEnemy();
         Iterator<Plane> iter = FlyingEnemies.iterator();
         while (iter.hasNext()) {
             Plane avion = iter.next();
-            // avion.Xspeed = 300;
-            // avion.update();// on met a jour la position de l enemie a chaque fois
             if (avion instanceof French) {
                 BasicEnemy = (French) avion;
-                // checkEnemyCollision(avion);
-                BasicEnemy.update();
-            }
-            if (avion instanceof British) {
+                BasicEnemy.update(Gdx.graphics.getDeltaTime(), enemyProjectiles);
+                BasicEnemy.update();  // Assurez-vous d'appeler la méthode update sans paramètre
+            } else if (avion instanceof British) {
                 AdvancedEnemy = (British) avion;
                 AdvancedEnemy.update();
             }
-            if (avion.getX() < 20) {
-                // createFlyingEnemy();
-                iter.remove();
-            }
-            if (avion.getHp() == 0) {
+            if (avion.getX() < 20 || avion.getHp() == 0) {
                 explode(avion.getX(), avion.getY());
                 iter.remove();
-
             }
-            // on va gerer le score
-
         }
-        // cette boucle permet d afficher les enemies
         for (Plane avion : FlyingEnemies) {
-            // SpawnFlyingEnemy(avion);
             if (avion instanceof French) {
                 BasicEnemy = (French) avion;
                 SpawnFlyingEnemy(BasicEnemy);
@@ -480,8 +474,9 @@ public class GameScreen implements Screen {
                 SpawnFlyingEnemy(avion);
             }
         }
-
     }
+    
+    
 
     private void renderExplosions(float delta) {
         batch.begin();
@@ -500,21 +495,14 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         game.batch.setProjectionMatrix(camera.combined);
-        // Effacer l'écran
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        // Dessiner la carte
+    
         MapGeneration();
-
-        // Si le jeu n'est pas terminé
+    
         if (!player.getGameOver()) {
-            elapsedTime = TimeUtils.timeSinceMillis(startTime);// on recuperer le temps depuis le début de la partie
-            // System.err.println("temps passe" + elapsedTime);
-            // System.out.println("dernier spawn" + lastShellSpawnTime);
-            this.update();
-            // createFlyingEnemy();
-            // System.err.println("taille" + FlyingEnemies.size);
+            elapsedTime = TimeUtils.timeSinceMillis(startTime);
+            update();
             renderGamePlay();
             UpdateFlyingEnemy();
             UpdateSupportEnemy();
@@ -522,17 +510,16 @@ public class GameScreen implements Screen {
         } else {
             renderGameOver();
         }
-
-        // Mettre à jour et dessiner les projectiles
+    
         updateProjectiles(delta);
         drawProjectiles();
-
-        // Dessiner les explosions
-        if(!player.getGameOver()){
+    
+        if (!player.getGameOver()) {
             renderExplosions(delta);
         }
-        
     }
+    
+
 
     private void renderGamePlay() {
         // Mettre à jour et dessiner le joueur
