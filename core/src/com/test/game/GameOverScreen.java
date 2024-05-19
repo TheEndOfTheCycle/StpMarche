@@ -2,7 +2,7 @@ package com.test.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.audio.Sound; 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -14,8 +14,8 @@ public class GameOverScreen implements Screen {
     final int VIEW_PORT_WIDTH = 800;
     final int VIEW_PORT_HEIGHT = 480;
     final int OFFSET_TITLE = 200;
-    private final Texture BackgroundTexture = new Texture("BackGroundImages/Game_Over.jpeg");
-    static Sound sonDeath = Gdx.audio.newSound(Gdx.files.internal("Music/You-died.mp3"));
+    private final Texture BackgroundTexture = new Texture("BackGroundImages/youdied.jpg");
+    static Sound sonDeath = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
 
     public GameOverScreen(final Test game) {
         this.game = game;
