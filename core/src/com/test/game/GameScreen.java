@@ -88,6 +88,7 @@ public class GameScreen implements Screen {
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
     private final int FIRE_SUPPORT_SPAWN = 4000;
 
+    private TextureRegion backgroundRegion;
     // Constructeur de la classe
     public GameScreen(final Test game) {
         this.game = game;
@@ -96,7 +97,8 @@ public class GameScreen implements Screen {
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         startTime = TimeUtils.millis();
-        background = new Texture("BackGroundImages/montains03.jpg"); // image de fond
+        background = new Texture("BackGroundImages/montains03.jpg");
+        backgroundRegion = new TextureRegion(background);// image de fond
         backgroundOffset = 0;
         Fire_Support = new Array<>();
         camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
@@ -151,13 +153,13 @@ public class GameScreen implements Screen {
         }
     }
 
-    public void MapGeneration() {
+    private void MapGeneration() {
         float delta = Gdx.graphics.getDeltaTime();
         ScreenUtils.clear(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+    
         batch.begin();
-        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.draw(backgroundRegion, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         updateObjects(delta);
         drawObjects();
@@ -497,6 +499,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        game.batch.setProjectionMatrix(camera.combined);
         // Effacer l'écran
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -576,8 +579,16 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        camera.viewportWidth = width;
+        camera.viewportHeight = height;
+        camera.update();
+    
+        // Mettre à jour la région de texture pour l'image de fond
+        backgroundRegion.setRegion(backgroundRegion , 0, 0, background.getWidth(), background.getHeight());
+        backgroundRegion.setRegionWidth(width);
+        backgroundRegion.setRegionHeight(height);
     }
-
     @Override
     public void show() {
         // start the playback of the background music when the screen is shown

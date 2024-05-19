@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class MenuScreen implements Screen {
@@ -41,20 +40,17 @@ public class MenuScreen implements Screen {
         sonMenu = Gdx.audio.newSound(Gdx.files.internal("Music/Unlimited-Blade-Works.mp3"));
     }
 
-    // Méthode pour dessiner l'écran du menu
-    public void draw(SpriteBatch batch) {
-        batch.draw(BackgroundTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-    }
-
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
 
         camera.update();
 
+        game.batch.setProjectionMatrix(camera.combined); // Ajout de cette ligne
+
         game.batch.begin();
 
-        draw(game.batch);
+        game.batch.draw(BackgroundTexture, 0, 0, camera.viewportWidth, camera.viewportHeight);
 
         // Configuration de la police pour le titre du jeu
         Tfont.getRegion().getTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -62,8 +58,8 @@ public class MenuScreen implements Screen {
         Tfont.setColor(Color.RED);
 
         // Dessiner le titre du jeu
-        Tfont.draw(game.batch, "Time To fly Red Baron ", (Gdx.graphics.getWidth() / 2) - OFFSET_TITLE,
-                Gdx.graphics.getHeight() - 10);
+        Tfont.draw(game.batch, "Time To fly Red Baron ", (camera.viewportWidth / 2) - OFFSET_TITLE,
+                camera.viewportHeight - 10);
 
         game.batch.end();
 
@@ -83,6 +79,8 @@ public class MenuScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        camera.setToOrtho(false, width, height);
+        camera.update();
     }
 
     @Override
@@ -99,6 +97,7 @@ public class MenuScreen implements Screen {
 
     @Override
     public void dispose() {
+        BackgroundTexture.dispose();
+        sonMenu.dispose();
     }
-
 }

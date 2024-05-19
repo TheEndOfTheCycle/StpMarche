@@ -14,7 +14,7 @@ public class GameOverScreen implements Screen {
     final int VIEW_PORT_WIDTH = 800;
     final int VIEW_PORT_HEIGHT = 480;
     final int OFFSET_TITLE = 200;
-    private final Texture BackgroundTexture = new Texture("BackGroundImages/Game_Over.png");
+    private final Texture BackgroundTexture = new Texture("BackGroundImages/youdied.jpg");
     static Sound sonDeath = Gdx.audio.newSound(Gdx.files.internal("Music/You-died.mp3"));
 
     public GameOverScreen(final Test game) {
@@ -24,22 +24,20 @@ public class GameOverScreen implements Screen {
     }
 
     public void draw(SpriteBatch batch) {
-        // Dessinez le mur à l'écran en utilisant les coordonnées du rectangle et la
-        // texture
-        batch.draw(BackgroundTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        // Draw the background texture to cover the entire screen
+        batch.draw(BackgroundTexture, 0, 0, camera.viewportWidth, camera.viewportHeight);
     }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
         camera.update();
-        // game.batch.setProjectionMatrix(camera.combined);
+        game.batch.setProjectionMatrix(camera.combined);
 
-        game.batch.begin();// on dessine l image grace au batch de la classe Test
+        game.batch.begin(); // Start drawing with the game's batch
         draw(game.batch);
         game.batch.end();
         if (Gdx.input.isTouched()) {
-            // game.menu.sonJeu.dispose();
             game.menu = new MenuScreen(game);
             dispose();
             game.setScreen(new MenuScreen(game));
@@ -49,31 +47,30 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void show() {
-
+        sonDeath.play();
     }
 
     @Override
     public void resize(int width, int height) {
-
+        camera.setToOrtho(false, width, height);
+        camera.update();
     }
 
     @Override
     public void pause() {
-
     }
 
     @Override
     public void resume() {
-
     }
 
     @Override
     public void hide() {
-
     }
 
     @Override
     public void dispose() {
-
+        BackgroundTexture.dispose();
+        sonDeath.dispose();
     }
 }
