@@ -1,20 +1,21 @@
 package com.test.game.planes;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.Zeppelin;
+import com.test.game.shoots.Projectile;
 
-public abstract class Plane {
+public class Plane {
 
-    protected float x;           
-    protected float y;            
-    private final int width; 
+    protected float x;
+    protected float y;
+    private final int width;
     private final int height;
     private Texture texture;
-
+    private boolean isFireHit = false;// cette variable permet de savoir si l'avion est touche par un projectile
+    private boolean deadByFireHit = false;// mort par projectile du joueur ou pas
     private boolean gameOver = false;
     private int hp;
 
@@ -25,6 +26,22 @@ public abstract class Plane {
         this.width = width;
         this.height = height;
         setTexture(texture);
+    }
+
+    public void setIsFireHit(boolean etat) {
+        this.isFireHit = etat;
+    }
+
+    public boolean getIsFireHit() {
+        return isFireHit;
+    }
+
+    public void setIsDeadByFireHit(boolean etat) {
+        this.deadByFireHit = etat;
+    }
+
+    public boolean getIsDeadByFireHit() {
+        return isFireHit;
     }
 
     // Getters and Setters
@@ -61,10 +78,10 @@ public abstract class Plane {
     }
 
     public void setHp(int hp) {
-        this.hp= hp;
+        this.hp = hp;
     }
 
-    public int getHp(){
+    public int getHp() {
         return hp;
     }
 
@@ -75,52 +92,43 @@ public abstract class Plane {
     public boolean getGameOver() {
         return gameOver;
     }
-    
+
     // Utilisez SpriteBatch pour dessiner la texture des avions
     public void draw(SpriteBatch batch) {
         batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
     }
 
-    // Encore en teste pour les ennemies c'est des carres pour le moment 
+    // Encore en teste pour les ennemies c'est des carres pour le moment
     public void draw(ShapeRenderer shape) {
         shape.rect(getX(), getY(), getWidth(), getHeight());
     }
 
     public void update() {
-        // Mise à jour de la position
-        setX(Gdx.input.getX() - (getWidth() / 2));
-        setY((Gdx.graphics.getHeight() - Gdx.input.getY()) - (getHeight() / 2));
 
-        // Pour ne pas sortir de l'écran sur l'axe des x
-        if (Gdx.graphics.getWidth() < Gdx.input.getX() + (getWidth() / 2)) {
-            setX(Gdx.graphics.getWidth() - getWidth());
-        }
-        if (Gdx.input.getX() - (getWidth() / 2) < 0) {
-            setX(0);
-        }
-        // Pour ne pas sortir de l'écran sur l'axe des y
-        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) < getHeight() / 2) {
-            setY(0);
-        }
-        if ((Gdx.graphics.getHeight() - Gdx.input.getY()) + (getHeight() / 2) > Gdx.graphics.getHeight()) {
-            setY(Gdx.graphics.getHeight() - getHeight());
-        }
     }
 
-    // Verification des collisions entre l'avion et le décore 
+    // Verification des collisions entre l'avion et le décore
     public boolean collidesWith(Wall wall) {
-        return (getX() + getWidth() >= wall.getX()) && (getX() <= (wall.getX() + wall.getWidth())) && (getY() + getHeight() >= wall.getY())
+        return (getX() + getWidth() >= wall.getX()) && (getX() <= (wall.getX() + wall.getWidth()))
+                && (getY() + getHeight() >= wall.getY())
                 && (getY() <= (wall.getY() + wall.getHeight()));
     }
 
     public boolean collidesWith(Plane avion) {
-        return (getX() + getWidth() >= avion.getX()) && (getX() <= (avion.getX() + avion.getWidth())) && (getY() + getHeight() >= avion.getY())
+        return (getX() + getWidth() >= avion.getX()) && (getX() <= (avion.getX() + avion.getWidth()))
+                && (getY() + getHeight() >= avion.getY())
                 && (getY() <= (avion.getY() + avion.getHeight()));
     }
 
-    // Verification des collisions entre l'avion et le décore 
+    // Verification des collisions entre l'avion et le décore
     public boolean collidesWith(Zeppelin zeppelin) {
-        return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth())) && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
+        return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth()))
+                && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
+    }
+
+    public boolean collidesWith(Projectile projectile) {
+        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
     }
 
     // verification des collisions avec le Wall
