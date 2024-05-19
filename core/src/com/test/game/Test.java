@@ -7,9 +7,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 
 public class Test extends Game {
-    
+
     SpriteBatch batch;
-    
+    public MenuScreen menu;
+    public GameScreen jeuScreen;
+    public GameOverScreen overScreen;
     private final Array<Screen> screens = new Array<>();
 
     public void addScreen(Screen screen) {
@@ -19,16 +21,17 @@ public class Test extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        Screen mm = new MenuScreen(this);
+        MenuScreen mm = new MenuScreen(this);
+        this.menu = mm;
         addScreen(mm);
         setScreen(mm);
+        mm.sonMenu.loop();
     }
 
     @Override
     public void render() {
         super.render();
     }
-    
 
     @Override
     public void dispose() {

@@ -4,6 +4,7 @@ import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -34,6 +35,8 @@ import com.test.game.shoots.Bullets;
 import com.test.game.shoots.Projectile;
 
 public class GameScreen implements Screen {
+    // Son
+    Sound sonJeu = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
     // Caméra et viewport
     private final OrthographicCamera camera;
     private final Viewport viewport;
@@ -508,6 +511,11 @@ public class GameScreen implements Screen {
 
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
+            game.jeuScreen.sonJeu.dispose();
+            game.overScreen = new GameOverScreen(game);
+            game.setScreen(game.overScreen);
+            game.overScreen.sonDeath.play();
+            dispose();
         }
     }
 

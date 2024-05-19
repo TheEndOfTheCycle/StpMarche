@@ -39,8 +39,6 @@ public class MenuScreen implements Screen {
         camera.setToOrtho(false, VIEW_PORT_WIDTH, VIEW_PORT_HEIGHT);
         BackgroundTexture = new Texture("BackGroundImages/red-wings.jpg");
         sonMenu = Gdx.audio.newSound(Gdx.files.internal("Music/Unlimited-Blade-Works.mp3"));
-        sonMenu.play();
-        sonJeu = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
     }
 
     // Méthode pour dessiner l'écran du menu
@@ -64,35 +62,43 @@ public class MenuScreen implements Screen {
         Tfont.setColor(Color.RED);
 
         // Dessiner le titre du jeu
-        Tfont.draw(game.batch, "Time To fly Red Baron ", (Gdx.graphics.getWidth() / 2) - OFFSET_TITLE,Gdx.graphics.getHeight() - 10);
-      
+        Tfont.draw(game.batch, "Time To fly Red Baron ", (Gdx.graphics.getWidth() / 2) - OFFSET_TITLE,
+                Gdx.graphics.getHeight() - 10);
+
         game.batch.end();
 
         // Si l'utilisateur touche l'écran, démarrer le jeu
         if (Gdx.input.isTouched()) {
-            game.setScreen(new GameScreen(game));
-            dispose();
-            sonMenu.dispose();
-            sonJeu.play();
+            game.jeuScreen = new GameScreen(game);
+            game.setScreen(game.jeuScreen);
+            this.dispose();
+            game.menu.sonMenu.dispose();
+            game.jeuScreen.sonJeu.loop();
         }
     }
 
     @Override
-    public void show() {}
+    public void show() {
+    }
 
     @Override
-    public void resize(int width, int height) {}
+    public void resize(int width, int height) {
+    }
 
     @Override
-    public void pause() {}
+    public void pause() {
+    }
 
     @Override
-    public void resume() {}
+    public void resume() {
+    }
 
     @Override
-    public void hide() {}
+    public void hide() {
+    }
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+    }
 
 }

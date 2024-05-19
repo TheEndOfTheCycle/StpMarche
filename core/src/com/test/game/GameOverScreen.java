@@ -15,7 +15,7 @@ public class GameOverScreen implements Screen {
     final int VIEW_PORT_HEIGHT = 480;
     final int OFFSET_TITLE = 200;
     private final Texture BackgroundTexture = new Texture("BackGroundImages/Game_Over.jpeg");
-    static Sound deathSound = Gdx.audio.newSound(Gdx.files.internal("Music/You-died.mp3"));
+    static Sound sonDeath = Gdx.audio.newSound(Gdx.files.internal("Music/You-died.mp3"));
 
     public GameOverScreen(final Test game) {
         this.game = game;
@@ -39,8 +39,11 @@ public class GameOverScreen implements Screen {
         draw(game.batch);
         game.batch.end();
         if (Gdx.input.isTouched()) {
+            // game.menu.sonJeu.dispose();
+            game.menu = new MenuScreen(game);
             dispose();
             game.setScreen(new MenuScreen(game));
+            game.menu.sonMenu.loop();
         }
     }
 
