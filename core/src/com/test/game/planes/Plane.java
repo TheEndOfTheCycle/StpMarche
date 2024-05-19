@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.Zeppelin;
+import com.test.game.shoots.Projectile;
 
 public class Plane {
 
@@ -107,6 +108,11 @@ public class Plane {
     public boolean collidesWith(Zeppelin zeppelin) {
         return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth()))
                 && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
+    }
+
+    public boolean collidesWith(Projectile projectile) {
+        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
     }
 
     // verification des collisions avec le Wall

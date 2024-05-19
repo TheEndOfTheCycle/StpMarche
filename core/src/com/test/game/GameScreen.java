@@ -254,6 +254,17 @@ public class GameScreen implements Screen {
         return false;
     }
 
+    public void handleDamagedFlyingEnemy() {
+        for (Projectile tire : projectiles) {
+            for (Plane avion : FlyingEnemies) {
+                if (avion.collidesWith(tire)) {
+                    avion.setHp(avion.getHp() - 1);
+                    tire.setHit(true);
+                }
+            }
+        }
+    }
+
     private void handlePlayerCollision() {
         // Produire l'animation d'explosion pour le joueur
         explode(player.getX(), player.getY());
@@ -323,7 +334,7 @@ public class GameScreen implements Screen {
         for (int i = 0; i < projectiles.size; i++) {
             Projectile projectile = projectiles.get(i);
             projectile.update(delta);
-            if (projectile.isOutOfScreen()) {
+            if (projectile.isOutOfScreen() || projectile.getHit() == true) {
                 projectiles.removeIndex(i);
             } else {
                 // Vérifier les collisions avec les murs
@@ -350,10 +361,10 @@ public class GameScreen implements Screen {
     {
 
         ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
-        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 10);
+        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 5);
         while (checkEnemyCollision(avion)) {
             ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
-            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 10);
+            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 5);
         }
         FlyingEnemies.add(avion);
         lastEnemySpawnTime = elapsedTime;
@@ -417,6 +428,7 @@ public class GameScreen implements Screen {
                 iter.remove();
             }
             if (avion.getHp() == 0) {
+                explode(avion.getX(), avion.getY());
                 iter.remove();
             }
 
@@ -489,6 +501,7 @@ public class GameScreen implements Screen {
         player.update();
         player.draw(batch);
         player.drawHealth(batch);
+        handleDamagedFlyingEnemy();
         batch.end();
 
         // Créer et dessiner les ennemis
