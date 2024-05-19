@@ -5,6 +5,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class Test extends Game {
 
@@ -13,6 +16,7 @@ public class Test extends Game {
     public GameScreen jeuScreen;
     public GameOverScreen overScreen;
     private final Array<Screen> screens = new Array<>();
+    BufferedWriter writer;
 
     public void addScreen(Screen screen) {
         this.screens.add(screen);
@@ -26,6 +30,11 @@ public class Test extends Game {
         addScreen(mm);
         setScreen(mm);
         mm.sonMenu.loop();
+        try {
+            writer = new BufferedWriter(new FileWriter("Score/score.txt"));
+        } catch (IOException e) {
+
+        }
     }
 
     @Override
