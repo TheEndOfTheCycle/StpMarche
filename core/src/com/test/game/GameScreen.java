@@ -71,7 +71,7 @@ public class GameScreen implements Screen {
     // Enemies
     private final Array<Plane> FlyingEnemies;
     private final Array<Artillery> Fire_Support;
-    private final float FIRE_SUPPORT_SPEED = 10;
+    private final float FIRE_SUPPORT_SPEED = 300;
     float lastEnemySpawnTime;
     float lastShellSpawnTime;
     long startTime;
@@ -81,7 +81,7 @@ public class GameScreen implements Screen {
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
-    private final int FIRE_SUPPORT_SPAWN = 100;
+    private final int FIRE_SUPPORT_SPAWN = 4000;
 
     // Constructeur de la classe
     public GameScreen(final Test game) {
@@ -419,7 +419,7 @@ public class GameScreen implements Screen {
             this.update();
             // createFlyingEnemy();
             System.err.println("taille" + FlyingEnemies.size);
-            // renderGamePlay();
+            renderGamePlay();
             UpdateFlyingEnemy();
             UpdateSupportEnemy();
         } else {
