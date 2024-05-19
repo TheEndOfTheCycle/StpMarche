@@ -228,7 +228,7 @@ public class GameScreen implements Screen {
 
     }
 
-    public boolean checkEnemyCollision(Plane avion) {
+    public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des enemies seulment
         for (Object object : objects) {
             if (object instanceof Wall) {
                 Wall mur = (Wall) object;
@@ -255,6 +255,15 @@ public class GameScreen implements Screen {
         // Produire l'animation d'explosion pour le joueur
         explode(player.getX(), player.getY());
         player.setGameOver(true); // Marquer le jeu comme terminé
+    }
+
+    public void handleEnemyCollision() {// cette fonction gere la mort d un enemie
+        for (Plane avion : FlyingEnemies) {
+            if (checkEnemyCollision(avion)) {
+                explode(avion.getX(), avion.getY());
+                avion.setHp(0);
+            }
+        }
     }
 
     private boolean bombCollision(Bomb bomb) {
@@ -404,6 +413,9 @@ public class GameScreen implements Screen {
                 // createFlyingEnemy();
                 iter.remove();
             }
+            if (avion.getHp() == 0) {
+                iter.remove();
+            }
 
         }
         // cette boucle permet d afficher les enemies
@@ -446,15 +458,16 @@ public class GameScreen implements Screen {
 
         // Si le jeu n'est pas terminé
         if (!player.getGameOver()) {
-            elapsedTime = TimeUtils.timeSinceMillis(startTime);
-            System.err.println("temps passe" + elapsedTime);
-            System.out.println("dernier spawn" + lastShellSpawnTime);
+            elapsedTime = TimeUtils.timeSinceMillis(startTime);// on recuperer le temps depuis le début de la partie
+            // System.err.println("temps passe" + elapsedTime);
+            // System.out.println("dernier spawn" + lastShellSpawnTime);
             this.update();
             // createFlyingEnemy();
             System.err.println("taille" + FlyingEnemies.size);
             renderGamePlay();
             UpdateFlyingEnemy();
             UpdateSupportEnemy();
+            handleEnemyCollision();
         } else {
             renderGameOver();
         }
@@ -472,6 +485,7 @@ public class GameScreen implements Screen {
         batch.begin();
         player.update();
         player.draw(batch);
+        player.drawHealth(batch);
         batch.end();
 
         // Créer et dessiner les ennemis
