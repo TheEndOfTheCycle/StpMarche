@@ -52,7 +52,7 @@ public class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 480;
 
     private final float ENEMY_SPAWN_TIME = 0;
-
+    private final float FRENCH_ENEMY_SPEED = 1;
     private final Test game;
 
     Array<Object> objects; // Liste des objects
@@ -361,10 +361,10 @@ public class GameScreen implements Screen {
     {
 
         ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
-        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 5);
+        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
         while (checkEnemyCollision(avion)) {
             ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
-            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, 5);
+            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
         }
         FlyingEnemies.add(avion);
         lastEnemySpawnTime = elapsedTime;
