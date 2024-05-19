@@ -54,7 +54,7 @@ public class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 480;
 
     private final float ENEMY_SPAWN_TIME = 0;
-    private final float FRENCH_ENEMY_SPEED = 1; // // Hello A MODIF
+    private final float FRENCH_ENEMY_SPEED = 3;
     private final Test game;
 
     Array<Object> objects; // Liste des objects
