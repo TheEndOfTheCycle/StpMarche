@@ -12,7 +12,9 @@ public class French extends Plane {
     private static int SCORE_VALUE = 1;
     private final static Texture TEXTURE_FRENCH = new Texture(Gdx.files.internal("Planes/french.png"));
     private float timeSinceLastShot = 0;
-    private float shootingInterval = 2.0f;
+    private float shootingInterval = 0.5f;
+
+    private final int BULLET_SPEED = 100;
 
     // Constructeur de la classe
     public French(int x, int y, int height, int width, float speed) {
@@ -41,7 +43,13 @@ public class French extends Plane {
     }
 
     public void shoot(Array<Projectile> projectiles) {
-        Bullets bullet = new Bullets(getX(), getY(), 200f);
+        Bullets bullet = new Bullets(getX(), getY() + this.getHeight() / 2, BULLET_SPEED * getSpeed());// (Bullet speed
+                                                                                                       // * getspped a
+                                                                                                       // fin que le
+                                                                                                       // projectile
+                                                                                                       // soit toujours
+                                                                                                       // plus rapide
+                                                                                                       // que l avion)
         projectiles.add(bullet);
     }
 
@@ -53,11 +61,5 @@ public class French extends Plane {
             timeSinceLastShot = 0;
         }
 
-        // Mise à jour des projectiles tirés par l'avion French
-        for (Projectile projectile : projectiles) {
-            if (projectile instanceof Bullets) {
-                ((Bullets) projectile).updateForEnemy(delta);// on dessine et on met a jour le projectile
-            }
-        }
     }
 }

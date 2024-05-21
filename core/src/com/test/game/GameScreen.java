@@ -68,7 +68,7 @@ public class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 480;
 
     private final float ENEMY_SPAWN_TIME = 0;
-    private final float FRENCH_ENEMY_SPEED = 5;
+    private final float FRENCH_ENEMY_SPEED = 3;
     private final Test game;
 
     Array<Object> objects; // Liste des objects
@@ -101,7 +101,7 @@ public class GameScreen implements Screen {
     British AdvancedEnemy;
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
-    private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
+    private final int FLYING_ENEMY_SPAWN_INTERVAL = 3000;
     private final int FIRE_SUPPORT_SPAWN = 4000;
     private final int BUFF_SPAWN_TIME = 2000;
     private final int SCORE_FOR_STAGE2 = 1;
@@ -411,7 +411,7 @@ public class GameScreen implements Screen {
     private void updateProjectiles(float delta) {
         for (int i = 0; i < projectiles.size; i++) {
             Projectile projectile = projectiles.get(i);
-            projectile.update(delta);
+            projectile.update(delta);// on gere les projectiles du joueur
             if (projectile.isOutOfScreen() || projectile.getHit() == true) {
                 projectiles.removeIndex(i);
             }
@@ -431,7 +431,10 @@ public class GameScreen implements Screen {
         // on gere les projectiles enemies
         for (int i = 0; i < enemyProjectiles.size; i++) {
             Projectile tire = enemyProjectiles.get(i);
-            tire.update(delta);
+            if (tire instanceof Bullets) {
+                Bullets balle = (Bullets) tire;
+                balle.updateForEnemy(delta);
+            }
             if (tire.isOutOfScreen()) {// le tire sort de l ecran
                 enemyProjectiles.removeIndex(i);
                 break;// on a fini le traitment de la balle donc on sort
@@ -440,7 +443,9 @@ public class GameScreen implements Screen {
                 player.setHp(player.getHp() - 1);
                 enemyProjectiles.removeIndex(i);
             }
+
         }
+
     }
 
     public void createFlyingEnemy()
@@ -505,8 +510,7 @@ public class GameScreen implements Screen {
             if (avion instanceof French) {
                 BasicEnemy = (French) avion;
                 BasicEnemy.update();
-                BasicEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);// on met a jour la position des
-                                                                                     // projectiles pour chaque avion
+                BasicEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
             }
             if (avion instanceof British) {
                 AdvancedEnemy = (British) avion;
