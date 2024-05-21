@@ -46,9 +46,12 @@ public class GameScreen implements Screen {
     // ecriture de fichier
     BufferedWriter writer;
     // Son
-    Sound sonJeu = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
-    private final float SOUND_EFFECTS_VOLUME = 0.02f;// (on caste en float sinon ca le lit comme un double),la valeur
+    private final float SOUND_EFFECTS_VOLUME = 0.01f;// (on caste en float sinon ca le lit comme un double),la valeur
                                                      // est un pourcentage donc 1=100% volume du son
+    final String MUSIQUE1 = "Music/Red-B.mp3";
+    final String MUSIQUE2 = "Music/Berserk.mp3";
+    final String MUSIQUE3 = "Music/Evangelion.mp3";
+    Sound sonJeu;
     // Caméra et viewport
     private final OrthographicCamera camera;
     private final Viewport viewport;
@@ -81,7 +84,6 @@ public class GameScreen implements Screen {
     private final Array<Projectile> enemyProjectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
-    Buff buffitem;
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
@@ -103,12 +105,26 @@ public class GameScreen implements Screen {
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 3000;
     private final int FIRE_SUPPORT_SPAWN = 4000;
-    private final int BUFF_SPAWN_TIME = 2000;
     private final int SCORE_FOR_STAGE2 = 1;
     private final int SCORE_FOR_STAGE3 = 2;
+    // Buff
+    private final int BUFF_SPAWN_TIME = 5000;
+    Buff buffitem;
+    long lastBuffSpawnTime;
     // Constructeur de la classe
 
     public GameScreen(final Test game, int niveauCourrant) {
+        // sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE1));
+        if (game.getCurrentMap() == 1) {
+            sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE1));
+        }
+        if (game.getCurrentMap() == 2) {
+            sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE3));
+        }
+        if (game.getCurrentMap() == 3) {
+            sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE2));
+        }
+        sonJeu.loop(SOUND_EFFECTS_VOLUME);// on lance la musique des que le jeu commence
         this.game = game;
         this.game.addScreen(this);
         try {
@@ -311,6 +327,43 @@ public class GameScreen implements Screen {
             return true;
         }
         return false;
+    }
+
+    public boolean checkBuffSpawn(Buff buff) {
+        for (Object objet : objects) {
+            if (objet instanceof Wall) {
+                Wall tempo = (Wall) objet;
+                if (buff.collidesWith(tempo)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void handleBuffSpawn() {
+
+        if (buffitem != null) {
+            buffitem.draw(batch);
+            if (player.collidesWithBuff(buffitem)) {
+                if (buffitem instanceof Heart) {
+                    player.setHp(player.getHp() + 1);
+                    buffitem = null;
+                }
+            }
+        }
+        if (elapsedTime - lastBuffSpawnTime > BUFF_SPAWN_TIME && buffitem == null) {// il ne doit pas y avoir plus d un
+                                                                                    // buff sur la map
+            buffitem = new Heart(MathUtils.random(100, Gdx.graphics.getHeight() - 100),
+                    MathUtils.random(100, Gdx.graphics.getHeight()) - 100);
+            while (checkBuffSpawn(buffitem)) {
+                buffitem = new Heart(MathUtils.random(100, Gdx.graphics.getHeight() - 100),
+                        MathUtils.random(100, Gdx.graphics.getHeight()) - 100);
+            }
+            // System.err.println("haha");
+            lastBuffSpawnTime = elapsedTime;
+        }
+
     }
 
     // cette fonction va gerer les avoins lorsque ils se prennent des degats
@@ -600,11 +653,12 @@ public class GameScreen implements Screen {
         // Heart coeur = new Heart(200, 200);
         batch.begin();
         player.update();
-        // coeur.draw(batch);
+        handleBuffSpawn();
         player.draw(batch);
         player.drawHealth(batch);
         scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
         batch.end();
+
         checkPlayerCollisions();
         handlePlayerHealth();
 
@@ -646,24 +700,25 @@ public class GameScreen implements Screen {
     }
 
     public void renderWin() {
-        game.jeuScreen.sonJeu.dispose();
+        // game.jeuScreen.sonJeu.dispose();
         WinLevelScreen ecran = new WinLevelScreen(game);
         game.WinScreen = ecran;
-        score = score;
+        // score = score;
+        game.ScoreTotale += score;
         game.setScreen(game.WinScreen);
         // score = 0;// temporairment on met le score a 0
-        if (game.getCurrentMap() == 3) {
-            try {
-                // game.writer.write(score);
-                writer.write(String.valueOf(game.ScoreTotale + "\n"));// on convertit le score en chaine
 
-                // writer.write("hah");
-                writer.close();
+        try {
+            // game.writer.write(score);
+            writer.write(String.valueOf(game.ScoreTotale + "\n"));// on convertit le score en chaine
 
-            } catch (IOException e) {
-                // System.out.println("e");
-            }
+            // writer.write("hah");
+            writer.close();
+
+        } catch (IOException e) {
+            // System.out.println("e");
         }
+
     }
 
     @Override

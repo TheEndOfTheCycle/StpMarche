@@ -105,7 +105,6 @@ public class MenuScreen implements Screen {
             game.setScreen(game.jeuScreen);
             this.dispose();
             game.menu.sonMenu.dispose();
-            game.jeuScreen.sonJeu.loop(Test.MUSIC_VOLUME);
         }
     }
 

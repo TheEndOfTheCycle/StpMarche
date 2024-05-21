@@ -23,6 +23,7 @@ public class WinLevelScreen implements Screen {
         if (game.getCurrentMap() == 4) {// on atteint la derniere map
             game.setCurrentMap(1);// on repart de la 1ere map
         }
+        game.jeuScreen.sonJeu.dispose();// on est pas sur le jeu donc on enleve la musique
     }
 
     public void draw(SpriteBatch batch) {

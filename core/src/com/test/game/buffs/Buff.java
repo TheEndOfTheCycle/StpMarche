@@ -2,6 +2,7 @@ package com.test.game.buffs;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.test.game.graphics.Wall;
 
 public class Buff {
     protected float x;
@@ -49,5 +50,11 @@ public class Buff {
 
     public void draw(SpriteBatch batch) {
         batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
+    }
+
+    public boolean collidesWith(Wall wall) {
+        return (getX() + getWidth() >= wall.getX()) && (getX() <= (wall.getX() + wall.getWidth()))
+                && (getY() + getHeight() >= wall.getY())
+                && (getY() <= (wall.getY() + wall.getHeight()));
     }
 }

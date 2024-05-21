@@ -4,12 +4,14 @@ package com.test.game;
 import java.io.IOException;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 
 public class Test extends Game {
-
+    Sound sonJeu;
     SpriteBatch batch;
     public MenuScreen menu;
     public GameScreen jeuScreen;
@@ -28,6 +30,7 @@ public class Test extends Game {
     }
 
     public void setCurrentMap(int CarteCourante) {
+
         this.CurrentMap = CarteCourante;
     }
 
