@@ -68,7 +68,7 @@ public class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 480;
 
     private final float ENEMY_SPAWN_TIME = 0;
-    private final float FRENCH_ENEMY_SPEED = 1;
+    private final float FRENCH_ENEMY_SPEED = 5;
     private final Test game;
 
     Array<Object> objects; // Liste des objects
@@ -284,13 +284,7 @@ public class GameScreen implements Screen {
                         Fire_Support.removeIndex(i);
                     }
                 }
-                if (player.collidesWithBuff(buffitem)) {
-                    if (buffitem instanceof Heart) {
-                        // buffitem = null;// on s'en débarasse
-                        player.setHp(player.getHp() + 1);
-                        // buffitem = null;
-                    }
-                }
+
             }
         }
 
@@ -564,7 +558,7 @@ public class GameScreen implements Screen {
         // Effacer l'écran
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        buffitem = new Heart(200, 200);
+        // buffitem = new Heart(200, 200);
         // Dessiner la carte
         MapGeneration();
 
@@ -599,10 +593,10 @@ public class GameScreen implements Screen {
 
     private void renderGamePlay() {
         // Mettre à jour et dessiner le joueur
-        Heart coeur = new Heart(200, 200);
+        // Heart coeur = new Heart(200, 200);
         batch.begin();
         player.update();
-        coeur.draw(batch);
+        // coeur.draw(batch);
         player.draw(batch);
         player.drawHealth(batch);
         scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
