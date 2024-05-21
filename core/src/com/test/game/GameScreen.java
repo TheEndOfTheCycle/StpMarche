@@ -1,5 +1,10 @@
 package com.test.game;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -22,6 +27,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.test.game.buffs.Buff;
+import com.test.game.buffs.Heart;
 import com.test.game.explosion.Explosion;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
@@ -36,15 +43,24 @@ import com.test.game.shoots.Bullets;
 import com.test.game.shoots.Projectile;
 
 public class GameScreen implements Screen {
+    // ecriture de fichier
+    BufferedWriter writer;
     // Son
     Sound sonJeu = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
+    private final float SOUND_EFFECTS_VOLUME = 0.02f;// (on caste en float sinon ca le lit comme un double),la valeur
+                                                     // est un pourcentage donc 1=100% volume du son
     // Caméra et viewport
     private final OrthographicCamera camera;
     private final Viewport viewport;
     // Graphismes
     private final SpriteBatch batch;
-    private final Texture background;
+    private Texture background;
     private BitmapFont scoreFont;
+    int mapWidth;
+    private final String CARET1 = "Map/carte1.txt";// ces variables representent les niveaux a charger,pas les images de
+                                                   // fond
+    private final String CARET2 = "Map/carte2.txt";// a changer pour generer une nouvelle map
+    private final String CARET3 = "Map/carte1.txt";
     // Défilement du fond
     private final int backgroundOffset;
 
@@ -59,11 +75,13 @@ public class GameScreen implements Screen {
     float scrollSpeed = 100.f;
     ShapeRenderer shape;
     private int score = 0;
+    // Parametres de jeu
     Red player;
     private final Array<Projectile> projectiles;
+    private final Array<Projectile> enemyProjectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
-
+    Buff buffitem;
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
@@ -85,33 +103,51 @@ public class GameScreen implements Screen {
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
     private final int FIRE_SUPPORT_SPAWN = 4000;
-
+    private final int BUFF_SPAWN_TIME = 2000;
+    private final int SCORE_FOR_STAGE2 = 1;
+    private final int SCORE_FOR_STAGE3 = 2;
     // Constructeur de la classe
-    public GameScreen(final Test game) {
+
+    public GameScreen(final Test game, int niveauCourrant) {
         this.game = game;
         this.game.addScreen(this);
+        try {
+            writer = new BufferedWriter(new FileWriter("Score/score.txt", true));// append=true permet de ne pas écraser
+                                                                                 // le fichier
+        } catch (IOException e) {
 
+        }
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         startTime = TimeUtils.millis();
-        background = new Texture("BackGroundImages/montains03.jpg"); // image de fond
         backgroundOffset = 0;
         Fire_Support = new Array<>();
         camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
         scoreFont = new BitmapFont();
-        objects = WallParser.parseWalls("Map/test.txt");
+        // objects = WallParser.parseWalls("Map/test.txt");
         player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
         FlyingEnemies = new Array<>();
-
         // Charger l'animation d'explosion
         explosionAtlas = new TextureAtlas(Gdx.files.internal("atlas/kisspng-sprite-explosion_pack.atlas"));
         explosionAnimation = new Animation<>(0.1f, explosionAtlas.getRegions());
-
         projectiles = new Array<>();
+        enemyProjectiles = new Array<>();
         explosions = new Array<>();
-
+        // le niveau qu on va charger suivant le numero de la map
+        if (game.getCurrentMap() == 1) {
+            objects = WallParser.parseWalls(CARET1);
+            mapWidth = WallParser.calculateMapWidth(CARET1);
+        }
+        if (game.getCurrentMap() == 2) {
+            objects = WallParser.parseWalls(CARET2);
+            mapWidth = WallParser.calculateMapWidth(CARET2);
+        }
+        if (game.getCurrentMap() == 3) {
+            objects = WallParser.parseWalls(CARET3);
+            mapWidth = WallParser.calculateMapWidth(CARET3);
+        }
         // Ajouter un listener d'entrée pour détecter les clics de la souris et la barre
         // d'espace
         Gdx.input.setInputProcessor(new InputAdapter() {
@@ -119,6 +155,13 @@ public class GameScreen implements Screen {
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 if (button == Buttons.LEFT) {
                     createBullet();
+                    // player.sonTire.play(SOUND_EFFECTS_VOLUME);
+                    if (game.getScreen().getClass() == GameScreen.class) {// pour declencher l effet sonor on verifie si
+                                                                          // on est bien dans un objet de class
+                                                                          // GameScreen c a d on est bien entrain de
+                                                                          // jouer et pas dans un menu
+                        player.sonTire.play(SOUND_EFFECTS_VOLUME);
+                    }
                 }
                 return true;
             }
@@ -155,18 +198,24 @@ public class GameScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.begin();
+        if (game.getCurrentMap() == 1) {
+            background = new Texture("BackGroundImages/montains01.jpg"); // image de fond
+        }
+        if (game.getCurrentMap() == 2) {
+            background = new Texture("BackGroundImages/montains02.png");
+        }
+        if (game.getCurrentMap() == 3) {
+            background = new Texture("BackGroundImages/montains03.jpg");
+        }
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
         updateObjects(delta);
         drawObjects();
-        checkPlayerCollisions();
 
         batch.end();
     }
 
     private void updateObjects(float delta) {
         // Calculer la largeur totale de la carte
-        int mapWidth = WallParser.calculateMapWidth("Map/test.txt");
 
         // Mettre à jour les objets
         for (Object object : objects) {
@@ -221,9 +270,25 @@ public class GameScreen implements Screen {
                         objects.removeValue(bomb, true);
                     }
                 }
-                for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie
+                for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie,en effet mort instantanée en
+                                                   // cas de collision
                     if (player.checkCollision(avion)) {
                         handlePlayerCollision();
+                    }
+                }
+                // on gere la collision avec l artillerie
+                for (int i = 0; i < Fire_Support.size; i++) {
+                    if (player.collidesWith(Fire_Support.get(i))) {
+                        player.setHp(player.getHp() - 1);
+                        explode(Fire_Support.get(i).getX(), Fire_Support.get(i).getY());
+                        Fire_Support.removeIndex(i);
+                    }
+                }
+                if (player.collidesWithBuff(buffitem)) {
+                    if (buffitem instanceof Heart) {
+                        // buffitem = null;// on s'en débarasse
+                        player.setHp(player.getHp() + 1);
+                        // buffitem = null;
                     }
                 }
             }
@@ -259,7 +324,7 @@ public class GameScreen implements Screen {
         for (Projectile tire : projectiles) {
             for (Plane avion : FlyingEnemies) {
                 if (avion.collidesWith(tire)) {
-                    avion.setHp(avion.getHp() - 1);
+                    avion.setHp(avion.getHp() - 1);// on diminue la vie
                     tire.setHit(true);
                     if (avion.getHp() == 0) {
                         avion.setIsDeadByFireHit(true);
@@ -267,11 +332,16 @@ public class GameScreen implements Screen {
                         if (avion instanceof French) {
                             score += French.getScoreValue();
                         }
-                    } else {
-                        System.out.println("nonnnn");
                     }
                 }
             }
+        }
+    }
+
+    private void handlePlayerHealth() {
+        if (player.getHp() == 0) {
+            explode(player.getX(), player.getY());
+            player.setGameOver(true);
         }
     }
 
@@ -337,7 +407,11 @@ public class GameScreen implements Screen {
         for (Projectile projectile : projectiles) {
             projectile.draw(batch);
         }
+        for (Projectile tire : enemyProjectiles) {
+            tire.draw(batch);
+        }
         batch.end();
+
     }
 
     private void updateProjectiles(float delta) {
@@ -346,22 +420,31 @@ public class GameScreen implements Screen {
             projectile.update(delta);
             if (projectile.isOutOfScreen() || projectile.getHit() == true) {
                 projectiles.removeIndex(i);
-            } else {
-                // Vérifier les collisions avec les murs
-                if (projectile instanceof Bomb) {
-                    Bomb bomb = (Bomb) projectile;
-                    if (bombCollision(bomb)) {
-                        // Collision détectée avec un mur, retirer la bombe
-                        explode(bomb.getX() - scrollSpeed * delta, bomb.getY());
-                        projectiles.removeIndex(i);
-                        // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
-                        continue; // Passer à la prochaine boucle car cette bombe est retirée
-                    }
+            }
+            // Vérifier les collisions avec les murs
+            if (projectile instanceof Bomb) {
+                Bomb bomb = (Bomb) projectile;
+                if (bombCollision(bomb)) {
+                    // Collision détectée avec un mur, retirer la bombe
+                    explode(bomb.getX() - scrollSpeed * delta, bomb.getY());
+                    projectiles.removeIndex(i);
+                    // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
+                    continue; // Passer à la prochaine boucle car cette bombe est retirée
                 }
-                // Si ce n'est pas une bombe ou s'il n'y a pas de collision, dessiner la
-                // projectile normalement
-                // Pas besoin de vérifier les collisions pour les balles normales car elles sont
-                // censées traverser les murs
+            }
+
+        }
+        // on gere les projectiles enemies
+        for (int i = 0; i < enemyProjectiles.size; i++) {
+            Projectile tire = enemyProjectiles.get(i);
+            tire.update(delta);
+            if (tire.isOutOfScreen()) {// le tire sort de l ecran
+                enemyProjectiles.removeIndex(i);
+                break;// on a fini le traitment de la balle donc on sort
+            }
+            if (player.collidesWith(tire)) {
+                player.setHp(player.getHp() - 1);
+                enemyProjectiles.removeIndex(i);
             }
         }
     }
@@ -427,8 +510,9 @@ public class GameScreen implements Screen {
             // avion.update();// on met a jour la position de l enemie a chaque fois
             if (avion instanceof French) {
                 BasicEnemy = (French) avion;
-                // checkEnemyCollision(avion);
                 BasicEnemy.update();
+                BasicEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);// on met a jour la position des
+                                                                                     // projectiles pour chaque avion
             }
             if (avion instanceof British) {
                 AdvancedEnemy = (British) avion;
@@ -480,12 +564,12 @@ public class GameScreen implements Screen {
         // Effacer l'écran
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+        buffitem = new Heart(200, 200);
         // Dessiner la carte
         MapGeneration();
 
         // Si le jeu n'est pas terminé
-        if (!player.getGameOver()) {
+        if (player.getGameOver() == false) {
             elapsedTime = TimeUtils.timeSinceMillis(startTime);// on recuperer le temps depuis le début de la partie
             // System.err.println("temps passe" + elapsedTime);
             // System.out.println("dernier spawn" + lastShellSpawnTime);
@@ -496,28 +580,35 @@ public class GameScreen implements Screen {
             UpdateFlyingEnemy();
             UpdateSupportEnemy();
             handleEnemyCollision();
-        } else {
+        }
+
+        if (player.getGameOver() == true) {
             renderGameOver();
         }
 
         // Mettre à jour et dessiner les projectiles
         updateProjectiles(delta);
         drawProjectiles();
-
+        // System.out.println(enemyProjectiles.size + "taille");
         // Dessiner les explosions
         renderExplosions(delta);
+        if (score == 3) {
+            renderWin();
+        }
     }
 
     private void renderGamePlay() {
         // Mettre à jour et dessiner le joueur
+        Heart coeur = new Heart(200, 200);
         batch.begin();
         player.update();
+        coeur.draw(batch);
         player.draw(batch);
         player.drawHealth(batch);
         scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
         batch.end();
-
-        // Créer et dessiner les ennemis
+        checkPlayerCollisions();
+        handlePlayerHealth();
 
     }
 
@@ -538,10 +629,42 @@ public class GameScreen implements Screen {
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
             game.jeuScreen.sonJeu.dispose();
-            game.overScreen = new GameOverScreen(game);
+            game.overScreen = new GameOverScreen(game);// on va afficher l'ecran du gameover
             game.setScreen(game.overScreen);
             game.overScreen.sonDeath.play();
+            try {
+                // game.writer.write(score);
+                writer.write(String.valueOf(score + "\n"));// on convertit le score en chaine
+
+                // writer.write("hah");
+                writer.close();
+
+            } catch (IOException e) {
+                // System.out.println("e");
+            }
             dispose();
+        }
+
+    }
+
+    public void renderWin() {
+        game.jeuScreen.sonJeu.dispose();
+        WinLevelScreen ecran = new WinLevelScreen(game);
+        game.WinScreen = ecran;
+        score = score;
+        game.setScreen(game.WinScreen);
+        // score = 0;// temporairment on met le score a 0
+        if (game.getCurrentMap() == 3) {
+            try {
+                // game.writer.write(score);
+                writer.write(String.valueOf(game.ScoreTotale + "\n"));// on convertit le score en chaine
+
+                // writer.write("hah");
+                writer.close();
+
+            } catch (IOException e) {
+                // System.out.println("e");
+            }
         }
     }
 

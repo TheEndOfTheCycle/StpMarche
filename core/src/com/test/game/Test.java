@@ -1,6 +1,8 @@
 // Test.java
 package com.test.game;
 
+import java.io.IOException;
+
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -12,7 +14,22 @@ public class Test extends Game {
     public MenuScreen menu;
     public GameScreen jeuScreen;
     public GameOverScreen overScreen;
+    public WinLevelScreen WinScreen;
+    // le score du jeu
+    public int ScoreTotale = 0;
+    // Lire le score
     private final Array<Screen> screens = new Array<>();
+    private int CurrentMap = 1;// cette variable determine la map a cree lors du lancment du jeux
+    // Son des musiques
+    public static float MUSIC_VOLUME = 0.2f;
+
+    public int getCurrentMap() {
+        return this.CurrentMap;
+    }
+
+    public void setCurrentMap(int CarteCourante) {
+        this.CurrentMap = CarteCourante;
+    }
 
     public void addScreen(Screen screen) {
         this.screens.add(screen);
@@ -26,6 +43,7 @@ public class Test extends Game {
         addScreen(mm);
         setScreen(mm);
         mm.sonMenu.loop();
+
     }
 
     @Override

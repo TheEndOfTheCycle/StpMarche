@@ -17,7 +17,7 @@ public class Plane {
     private Texture texture;
     private boolean isFireHit = false;// cette variable permet de savoir si l'avion est touche par un projectile
     private boolean deadByFireHit = false;// mort par projectile du joueur ou pas
-    private boolean gameOver = false;
+    protected boolean gameOver = false;
     private int hp;
 
     // Constructeur du Plane
@@ -86,20 +86,11 @@ public class Plane {
         return hp;
     }
 
-    public void setGameOver(boolean gameOver) {
-        this.gameOver = gameOver;
-    }
-
-    public boolean getGameOver() {
-        return gameOver;
-    }
-
     // Utilisez SpriteBatch pour dessiner la texture des avions
     public void draw(SpriteBatch batch) {
         batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
     }
 
-    // Encore en teste pour les ennemies c'est des carres pour le moment
     public void draw(ShapeRenderer shape) {
         shape.rect(getX(), getY(), getWidth(), getHeight());
     }

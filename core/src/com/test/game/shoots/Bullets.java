@@ -10,4 +10,9 @@ public class Bullets extends Projectile {
                                      // elapser depuis le dernier frame
         x += speed * delta;
     }
+
+    public void updateForEnemy(float delta) {
+        // Déplacer le projectile vers la gauche
+        x -= speed * delta;
+    }
 }

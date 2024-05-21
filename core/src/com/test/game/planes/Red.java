@@ -1,8 +1,10 @@
 package com.test.game.planes;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.test.game.buffs.Buff;
 
 public class Red extends Plane {
 
@@ -12,6 +14,7 @@ public class Red extends Plane {
     private final static int HEALTH_SPREAD_VARAIBLE = 10;
     private static int health_spread_x;
     public Texture HealthTexture;
+    public Sound sonTire = Gdx.audio.newSound(Gdx.files.internal("SoundEffects/Shot.mp3"));
 
     // Constructeur de la classe
     public Red(int x, int y) {
@@ -49,5 +52,21 @@ public class Red extends Plane {
         }
         health_spread_x = 0;// on remet l'espacment entre les coeurs a zero,sinon les coeurs continuront
                             // avancer a chaque render
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
+
+    public boolean getGameOver() {
+        return gameOver;
+    }
+
+    public boolean collidesWithBuff(Buff buffitem) {
+
+        return (getX() + getWidth() >= buffitem.getX()) && (getX() <= (buffitem.getX() + buffitem.getWidth()))
+                && (getY() + getHeight() >= buffitem.getY())
+                && (getY() <= (buffitem.getY() + buffitem.getHeight()));
+
     }
 }
