@@ -7,6 +7,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.Zeppelin;
 import com.test.game.shoots.Projectile;
+import com.test.game.shoots.SolAir;
+import com.test.game.shoots.Tate;
+import com.test.game.shoots.Trump;
 
 public class Plane {
 
@@ -91,10 +94,6 @@ public class Plane {
         batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
     }
 
-    public void draw(ShapeRenderer shape) {
-        shape.rect(getX(), getY(), getWidth(), getHeight());
-    }
-
     public void update() {
 
     }
@@ -119,8 +118,21 @@ public class Plane {
     }
 
     public boolean collidesWith(Projectile projectile) {
-        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
-                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
+
+        if (projectile instanceof SolAir) {
+            SolAir tempo = (SolAir) projectile;
+            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()) + tempo.HEIGHT);
+        }
+        if (projectile instanceof Tate) {
+            Trump tempo = (Trump) projectile;
+            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()) - tempo.HEIGHT);
+        } else {
+
+            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
+        }
     }
 
     // verification des collisions avec le Wall

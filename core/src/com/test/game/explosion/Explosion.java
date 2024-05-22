@@ -20,13 +20,12 @@ public class Explosion {
     }
 
     public void update(float delta) {
-        x -= 100f * delta;
+        x -= 100 * delta;
         elapsedTime += delta;
         if (animation.isAnimationFinished(elapsedTime)) {
             finished = true;
         }
     }
-    
 
     public void draw(SpriteBatch batch) {
         if (!finished) {
@@ -39,7 +38,7 @@ public class Explosion {
     public boolean isFinished() {
         return finished;
     }
-    
+
     public float getX() {
         return x;
     }

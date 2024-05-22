@@ -10,10 +10,20 @@ public class Buff {
     private static int width = 40;
     private static int height = 40;
     protected Texture texture;
+    private final int ITEM_SPEED = 1;
 
     public Buff(int Xlevel, int Ylevel) {
         this.x = Xlevel;
         this.y = Ylevel;
+    }
+
+    public void update() {
+        setX(getX() - getSpeed());
+    }
+
+    // getters et setters
+    private float getSpeed() {
+        return ITEM_SPEED;
     }
 
     public float getX() {

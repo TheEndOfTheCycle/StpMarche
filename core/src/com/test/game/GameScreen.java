@@ -2,8 +2,6 @@ package com.test.game;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
@@ -21,7 +19,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.BSpline;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -30,24 +30,31 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.test.game.buffs.Buff;
 import com.test.game.buffs.Heart;
 import com.test.game.explosion.Explosion;
+import com.test.game.graphics.AntiAir;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
 import com.test.game.graphics.Zeppelin;
 import com.test.game.planes.Artillery;
+import com.test.game.planes.BossFinale;
 import com.test.game.planes.British;
 import com.test.game.planes.French;
 import com.test.game.planes.Plane;
 import com.test.game.planes.Red;
+import com.test.game.shoots.AmungUs;
 import com.test.game.shoots.Bomb;
 import com.test.game.shoots.Bullets;
 import com.test.game.shoots.Projectile;
+import com.test.game.shoots.SolAir;
+import com.test.game.shoots.Tate;
+import com.test.game.shoots.Trump;
 
 public class GameScreen implements Screen {
     // ecriture de fichier
     BufferedWriter writer;
     // Son
-    private final float SOUND_EFFECTS_VOLUME = 0.01f;// (on caste en float sinon ca le lit comme un double),la valeur
-                                                     // est un pourcentage donc 1=100% volume du son
+    private final float SOUND_VOLUME = 0.1f;// (on caste en float sinon ca le lit comme un double),la valeur
+                                            // est un pourcentage donc 1=100% volume du son
+    private final float SHOOTING_VOULME = 0.2f;
     final String MUSIQUE1 = "Music/Red-B.mp3";
     final String MUSIQUE2 = "Music/Berserk.mp3";
     final String MUSIQUE3 = "Music/Evangelion.mp3";
@@ -60,10 +67,12 @@ public class GameScreen implements Screen {
     private Texture background;
     private BitmapFont scoreFont;
     int mapWidth;
-    private final String CARET1 = "Map/carte1.txt";// ces variables representent les niveaux a charger,pas les images de
-                                                   // fond
+    private final String CARET1 = "Map/LatestMap.txt";// ces variables representent les niveaux a charger,pas les images
+                                                      // de
+                                                      // fond
     private final String CARET2 = "Map/carte2.txt";// a changer pour generer une nouvelle map
-    private final String CARET3 = "Map/carte1.txt";
+    private final String CARET3 = "Map/MapBoss.txt";
+    private TextureRegion backgroundRegion;
     // Défilement du fond
     private final int backgroundOffset;
 
@@ -72,6 +81,7 @@ public class GameScreen implements Screen {
 
     private final float ENEMY_SPAWN_TIME = 0;
     private final float FRENCH_ENEMY_SPEED = 3;
+    private final float BRITISH_ENEMY_SPEED = 1;
     private final Test game;
 
     Array<Object> objects; // Liste des objects
@@ -101,13 +111,19 @@ public class GameScreen implements Screen {
     long elapsedTime;
     French BasicEnemy;
     British AdvancedEnemy;
+    private BossFinale boss;
+    private boolean BossSlevel = false;
     private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
     private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
     private final int FLYING_ENEMY_SPAWN_INTERVAL = 3000;
     private final int FIRE_SUPPORT_SPAWN = 4000;
     private final int SCORE_FOR_STAGE2 = 1;
     private final int SCORE_FOR_STAGE3 = 2;
+    private final int ENEMY_SPAWN_RATIO = 50;// ratio du spawn entre les ennemies French et British
+    private int spawnType = 1;// si 1 on spawn french,si 2 on spawn british
+    private final int BASIC_DEATH_REQ = 2;// combien d enemies basics il faut tuer pour passer au niveau suivant
     // Buff
+    private Plane enemyspawn;
     private final int BUFF_SPAWN_TIME = 5000;
     Buff buffitem;
     long lastBuffSpawnTime;
@@ -117,14 +133,23 @@ public class GameScreen implements Screen {
         // sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE1));
         if (game.getCurrentMap() == 1) {
             sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE1));
+            BossSlevel = false;
         }
         if (game.getCurrentMap() == 2) {
             sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE3));
+            BossSlevel = false;
         }
         if (game.getCurrentMap() == 3) {
             sonJeu = Gdx.audio.newSound(Gdx.files.internal(MUSIQUE2));
+            BossSlevel = true;
+
         }
-        sonJeu.loop(SOUND_EFFECTS_VOLUME);// on lance la musique des que le jeu commence
+        if (BossSlevel) {
+            boss = new BossFinale(Gdx.graphics.getWidth() - BossFinale.FINAL_WIDTH, // on spawn le boss si on est au
+                    // niveau 3
+                    Gdx.graphics.getHeight() / 2 - BossFinale.FINAL_HEIGHT / 2);
+        }
+        sonJeu.loop(SOUND_VOLUME);// on lance la musique des que le jeu commence
         this.game = game;
         this.game.addScreen(this);
         try {
@@ -169,14 +194,16 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (button == Buttons.LEFT) {
+                if (button == Buttons.LEFT && !player.getGameOver()) {// on check que la partie n est pas finie
                     createBullet();
                     // player.sonTire.play(SOUND_EFFECTS_VOLUME);
-                    if (game.getScreen().getClass() == GameScreen.class) {// pour declencher l effet sonor on verifie si
-                                                                          // on est bien dans un objet de class
-                                                                          // GameScreen c a d on est bien entrain de
-                                                                          // jouer et pas dans un menu
-                        player.sonTire.play(SOUND_EFFECTS_VOLUME);
+                    if (game.getScreen().getClass() == GameScreen.class) {// pour declencher l
+                                                                          // effet sonor on
+                                                                          // verifie si
+                        // on est bien dans un objet de class
+                        // GameScreen c a d on est bien entrain de
+                        // jouer et pas dans un menu
+                        player.sonTire.play(SHOOTING_VOULME);
                     }
                 }
                 return true;
@@ -184,9 +211,10 @@ public class GameScreen implements Screen {
 
             @Override
             public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.SPACE) {
+                if (keycode == Input.Keys.SPACE && !player.getGameOver()) {
                     createBomb();
                 }
+
                 return true;
             }
         });
@@ -196,15 +224,16 @@ public class GameScreen implements Screen {
         if (elapsedTime - lastEnemySpawnTime >= FLYING_ENEMY_SPAWN_INTERVAL) {// si la difference entre le temps
                                                                               // courrant et le temps du dernier
                                                                               // spawn est superieur au temps de
-                                                                              // génération des enemies
-            createFlyingEnemy();
-            // System.err.println("elapsed time" + elapsedTime + "derneri spawn" +
-            // lastEnemySpawnTime);
+            if (BossSlevel == false) {
+                createFlyingEnemy();
+            } // génération des enemies
+              // System.err.println("elapsed time" + elapsedTime + "derneri spawn" +
+              // lastEnemySpawnTime);
 
             // System.err.println("yes");
         }
         if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN) {
-            createSupportEnemy();
+            // createSupportEnemy();
         }
     }
 
@@ -222,6 +251,7 @@ public class GameScreen implements Screen {
         }
         if (game.getCurrentMap() == 3) {
             background = new Texture("BackGroundImages/montains03.jpg");
+
         }
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         updateObjects(delta);
@@ -257,6 +287,23 @@ public class GameScreen implements Screen {
                     if (zep.getPosition().x < -70) {
                         zep.setPosition(mapWidth, zep.getPosition().y);
                     }
+                } else if (object instanceof AntiAir) {
+                    AntiAir groundEnemy = (AntiAir) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = groundEnemy.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    groundEnemy.setX(newX);
+
+                    // Tirer vers l'avion si à portée
+                    groundEnemy.update(delta, player, enemyProjectiles);// on fait tirer l enemie qui suit la position
+                                                                        // du
+                    // joueur
                 }
             }
         }
@@ -306,18 +353,11 @@ public class GameScreen implements Screen {
 
     }
 
-    public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des enemies seulment
+    public boolean checkCollisionSpawn(Plane avion) {// on gere la collisoin des enemies seulment lors du spawn
         for (Object object : objects) {
             if (object instanceof Wall) {
                 Wall mur = (Wall) object;
                 if (avion.checkCollision(mur)) {
-                    return true;
-                }
-            }
-
-            if (object instanceof Zeppelin) {
-                Zeppelin zepp = (Zeppelin) object;
-                if (avion.checkCollision(zepp)) {
                     return true;
                 }
             }
@@ -329,6 +369,47 @@ public class GameScreen implements Screen {
         return false;
     }
 
+    public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des enemies seulment
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall mur = (Wall) object;
+                if (avion.checkCollision(mur)) {
+                    if (avion instanceof British) {// en effet le british est invunérable au terrain,il ne le percute
+                                                   // jamais
+                        avion.setY(avion.getY() + 20);
+                        return false;
+                    }
+                    if (avion instanceof French) {// le French meurt lorsque il rentre dans le terrain
+                        return true;
+                    }
+                }
+            }
+
+        }
+        if (player.checkCollision(avion)) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des
+     * enemies seulment
+     * for (Object object : objects) {
+     * if (object instanceof Wall) {
+     * Wall mur = (Wall) object;
+     * if (avion.checkCollision(mur)) {
+     * return true;
+     * }
+     * }
+     * 
+     * }
+     * if (player.checkCollision(avion)) {
+     * return true;
+     * }
+     * return false;
+     * }
+     */
     public boolean checkBuffSpawn(Buff buff) {
         for (Object objet : objects) {
             if (objet instanceof Wall) {
@@ -345,22 +426,26 @@ public class GameScreen implements Screen {
 
         if (buffitem != null) {
             buffitem.draw(batch);
+            buffitem.update();
             if (player.collidesWithBuff(buffitem)) {
                 if (buffitem instanceof Heart) {
                     player.setHp(player.getHp() + 1);
                     buffitem = null;
                 }
             }
+
+        }
+        if (buffitem != null) {
+            if (buffitem.getX() < 10) {
+                buffitem = null;
+            }
         }
         if (elapsedTime - lastBuffSpawnTime > BUFF_SPAWN_TIME && buffitem == null) {// il ne doit pas y avoir plus d un
                                                                                     // buff sur la map
-            buffitem = new Heart(MathUtils.random(100, Gdx.graphics.getHeight() - 100),
-                    MathUtils.random(100, Gdx.graphics.getHeight()) - 100);
-            while (checkBuffSpawn(buffitem)) {
-                buffitem = new Heart(MathUtils.random(100, Gdx.graphics.getHeight() - 100),
-                        MathUtils.random(100, Gdx.graphics.getHeight()) - 100);
+            buffitem = new Heart(MathUtils.random(100, 400), MathUtils.random(100, 400));
+            while (checkBuffSpawn(buffitem) == false) {
+                buffitem = new Heart(MathUtils.random(100, 400), MathUtils.random(100, 400));
             }
-            // System.err.println("haha");
             lastBuffSpawnTime = elapsedTime;
         }
 
@@ -370,14 +455,19 @@ public class GameScreen implements Screen {
     public void handleDamagedFlyingEnemy() {
         for (Projectile tire : projectiles) {
             for (Plane avion : FlyingEnemies) {
-                if (avion.collidesWith(tire)) {
+                if (avion.collidesWith(tire) && (tire instanceof SolAir) == false) {// on verifie que l enemeie est
+                                                                                    // touche mais pas par une defense
+                                                                                    // aerienne
                     avion.setHp(avion.getHp() - 1);// on diminue la vie
                     tire.setHit(true);
                     if (avion.getHp() == 0) {
-                        avion.setIsDeadByFireHit(true);
+                        // avion.setIsDeadByFireHit(true);
                         // System.err.println("mort par tire");
                         if (avion instanceof French) {
                             score += French.getScoreValue();
+                        }
+                        if (avion instanceof British) {
+                            score += British.getScoreValue();
                         }
                     }
                 }
@@ -403,6 +493,30 @@ public class GameScreen implements Screen {
             if (checkEnemyCollision(avion)) {
                 explode(avion.getX(), avion.getY());
                 avion.setHp(0);
+            }
+        }
+        handleAntiAirCollisions();
+    }
+
+    private void handleAntiAirCollisions() {
+        for (int i = 0; i < projectiles.size; i++) {
+            Projectile projectile = projectiles.get(i);
+            if (projectile instanceof Bomb) {
+                for (Object object : objects) {
+                    if (object instanceof AntiAir) {
+                        AntiAir antiAir = (AntiAir) object;
+                        if (antiAir.collidesWith(projectile)) {
+                            // Créer une explosion à la position de l'anti-air
+                            explode(antiAir.getX(), antiAir.getY());
+
+                            // Retirer l'anti-air et le projectile de leurs listes respectives
+                            objects.removeValue(antiAir, true);
+                            projectiles.removeIndex(i);
+                            i--; // Réajuster l'index après suppression
+                            break; // Sortir de la boucle pour ce projectile
+                        }
+                    }
+                }
             }
         }
     }
@@ -435,6 +549,10 @@ public class GameScreen implements Screen {
             } else if (object instanceof Zeppelin) {
                 Zeppelin zep = (Zeppelin) object;
                 zep.draw(batch);
+            }
+            if (object instanceof AntiAir) {
+                AntiAir air = (AntiAir) object;
+                air.draw(batch);
             }
         }
     }
@@ -488,15 +606,33 @@ public class GameScreen implements Screen {
                 Bullets balle = (Bullets) tire;
                 balle.updateForEnemy(delta);
             }
+            if (tire instanceof SolAir) {// on vérifie si c est une AntiAir qui attaque
+                SolAir tireAir = (SolAir) tire;
+                tireAir.update(delta);
+            }
+            if (tire instanceof Trump) {
+                Trump tempo = (Trump) tire;
+                // tempo.update(delta);
+
+            }
+            if (tire instanceof AmungUs) {
+                AmungUs tempo = (AmungUs) tire;
+                tempo.update(delta);
+            }
+            if (tire instanceof Tate) {
+                Tate tempo = (Tate) tire;
+                tempo.update(delta);
+            }
             if (tire.isOutOfScreen()) {// le tire sort de l ecran
                 enemyProjectiles.removeIndex(i);
                 break;// on a fini le traitment de la balle donc on sort
             }
-            if (player.collidesWith(tire)) {
+            if (player.collidesWith(tire)) {// on check si le tire touche le joueur si c est le cas on reduit la sante
+                                            // du joueur de 1
                 player.setHp(player.getHp() - 1);
                 enemyProjectiles.removeIndex(i);
+                // System.out.println("ouiiiiiiiiiiiii");
             }
-
         }
 
     }
@@ -506,12 +642,28 @@ public class GameScreen implements Screen {
     {
 
         ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
-        Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
-        while (checkEnemyCollision(avion)) {
-            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
-            avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
+        if (MathUtils.random(1, 100) > ENEMY_SPAWN_RATIO) {
+            spawnType = 1;
+            enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                    FRENCH_ENEMY_SPEED);
+        } else {
+            spawnType = 2;
+            enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                    BRITISH_ENEMY_SPEED);
         }
-        FlyingEnemies.add(avion);
+
+        while (checkCollisionSpawn(enemyspawn)) {
+            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
+            if (spawnType == 1) {
+                enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                        FRENCH_ENEMY_SPEED);
+            }
+            if (spawnType == 2) {
+                enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                        BRITISH_ENEMY_SPEED);
+            }
+        }
+        FlyingEnemies.add(enemyspawn);
         lastEnemySpawnTime = elapsedTime;
     }
 
@@ -524,7 +676,7 @@ public class GameScreen implements Screen {
     public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
         shape.begin(ShapeRenderer.ShapeType.Filled);
         avion.update();
-        avion.draw(shape);
+        avion.draw(batch);
         shape.end();
     }
 
@@ -568,6 +720,7 @@ public class GameScreen implements Screen {
             if (avion instanceof British) {
                 AdvancedEnemy = (British) avion;
                 AdvancedEnemy.update();
+                AdvancedEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
             }
             if (avion.getX() < 20) {
                 // createFlyingEnemy();
@@ -600,7 +753,7 @@ public class GameScreen implements Screen {
         batch.begin();
         for (int i = 0; i < explosions.size; i++) {
             Explosion explosion = explosions.get(i);
-            explosion.update(delta);
+            explosion.update(delta);// on met a jour la position de l explosion
             explosion.draw(batch);
             if (explosion.isFinished()) {
                 explosions.removeIndex(i);
@@ -642,10 +795,13 @@ public class GameScreen implements Screen {
         drawProjectiles();
         // System.out.println(enemyProjectiles.size + "taille");
         // Dessiner les explosions
-        renderExplosions(delta);
-        if (score == 3) {
+        if (!player.getGameOver()) {
+            renderExplosions(delta);
+        }
+        if (score > 3) {
             renderWin();
         }
+
     }
 
     private void renderGamePlay() {
@@ -657,6 +813,11 @@ public class GameScreen implements Screen {
         player.draw(batch);
         player.drawHealth(batch);
         scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
+        if (BossSlevel) {
+            boss.update(Gdx.graphics.getDeltaTime(), player, enemyProjectiles);
+            boss.draw(batch);
+            System.err.println("taille " + enemyProjectiles.size);
+        }
         batch.end();
 
         checkPlayerCollisions();
@@ -686,7 +847,7 @@ public class GameScreen implements Screen {
             game.overScreen.sonDeath.play();
             try {
                 // game.writer.write(score);
-                writer.write(String.valueOf(score + "\n"));// on convertit le score en chaine
+                writer.write(String.valueOf("\n" + score));// on convertit le score en chaine
 
                 // writer.write("hah");
                 writer.close();
@@ -710,7 +871,7 @@ public class GameScreen implements Screen {
 
         try {
             // game.writer.write(score);
-            writer.write(String.valueOf(game.ScoreTotale + "\n"));// on convertit le score en chaine
+            writer.write(String.valueOf("\n" + game.ScoreTotale));// on convertit le score en chaine
 
             // writer.write("hah");
             writer.close();
@@ -732,6 +893,13 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        camera.viewportWidth = width;
+        camera.viewportHeight = height;
+        camera.update();
+
+        // Mettre à jour la région de texture pour l'image de fond
+
     }
 
     @Override
