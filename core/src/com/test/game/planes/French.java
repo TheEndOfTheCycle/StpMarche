@@ -25,27 +25,10 @@ public class French extends Plane {
     @Override
     public void update() {
         setX(getX() - getSpeed());
+        
     }
 
-    // getters et setters
-    private float getSpeed() {
-        return speed;
-    }
-
-    private void setSpeed(float speed) {
-        this.speed = speed;
-    }
-
-    public static int getScoreValue() {
-        return SCORE_VALUE;
-    }
-
-    // Méthode pour tirer des projectiles en ligne droite (vers la gauche)
-    public void shoot(Array<Projectile> projectiles) {
-        Bullets bullet = new Bullets(getX(), getY(), 200f);
-        projectiles.add(bullet);
-    }
-
+    // Overload update method to include ground collision avoidance
     public void update(float delta, Array<Projectile> projectiles) {
         timeSinceLastShot += delta;
         if (timeSinceLastShot >= shootingInterval) {
@@ -59,5 +42,19 @@ public class French extends Plane {
                 ((Bullets) projectile).updateForEnemy(delta);
             }
         }
+
+        // Check and avoid ground collision
+    }
+
+  
+
+    public static int getScoreValue() {
+        return SCORE_VALUE;
+    }
+
+    // Méthode pour tirer des projectiles en ligne droite (vers la gauche)
+    public void shoot(Array<Projectile> projectiles) {
+        Bullets bullet = new Bullets(getX(), getY(), 200f);
+        projectiles.add(bullet);
     }
 }

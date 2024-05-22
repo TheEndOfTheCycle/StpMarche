@@ -18,12 +18,5 @@ public class Artillery extends Plane {
     }
    
     
-    // getters et setters
-    private float getSpeed(){
-        return speed;
-    }
-
-    private void setSpeed(float speed){
-        this.speed = speed;
-    }
+    
 }

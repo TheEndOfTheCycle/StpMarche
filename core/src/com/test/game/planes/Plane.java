@@ -18,6 +18,7 @@ public class Plane {
     private boolean deadByFireHit = false;// mort par projectile du joueur ou pas
     private boolean gameOver = false;
     private int hp;
+    private float speed;
 
     // Constructeur du Plane
     public Plane(float x, float y, int width, int height, Texture texture) {
@@ -152,5 +153,21 @@ public class Plane {
             return true;
         }
         return false;
+    }
+
+     // Check and avoid collision with the ground (walls)
+     public void avoidGroundCollision(Wall ground) {
+        if (collidesWith(ground)) {
+            setY(getY() + 5); // Adjust this value as needed for how quickly the plane should rise
+        }
+    }
+
+     // Getters et setters
+     public float getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
     }
 }

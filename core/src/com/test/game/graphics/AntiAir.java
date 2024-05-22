@@ -40,4 +40,11 @@ public class AntiAir extends MapObjects  {
             timeSinceLastShot = 0;
         }
     }
+
+        // ------------------------------------------------------- modifier hier -----------------------
+
+    public boolean collidesWith(Projectile projectile) {
+        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
+    }
 }

@@ -260,13 +260,23 @@ public class GameScreen implements Screen {
             if (object instanceof Wall) {
                 Wall mur = (Wall) object;
                 if (avion.checkCollision(mur)) {
-                    return true;
+                    avion.setY(avion.getY() + 20);
+                    return false;
                 }
             }
 
-            if (object instanceof Zeppelin) {
-                Zeppelin zepp = (Zeppelin) object;
-                if (avion.checkCollision(zepp)) {
+        }
+        if (player.checkCollision(avion)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean checkCollisionSpawn(Plane avion) {// on gere la collisoin des enemies seulment
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall mur = (Wall) object;
+                if (avion.checkCollision(mur)) {
                     return true;
                 }
             }
@@ -293,6 +303,31 @@ public class GameScreen implements Screen {
                         }
                     } else {
                         System.out.println("nonnnn");
+                    }
+                }
+            }
+        }
+    }
+
+        // ------------------------------------------------------- modifier hier -----------------------
+
+    private void handleAntiAirCollisions() {
+        for (int i = 0; i < projectiles.size; i++) {
+            Projectile projectile = projectiles.get(i);
+            if (projectile instanceof Bomb) {
+                for (Object object : objects) {
+                    if (object instanceof AntiAir) {
+                        AntiAir antiAir = (AntiAir) object;
+                        if (antiAir.collidesWith(projectile)) {
+                            // Créer une explosion à la position de l'anti-air
+                            explode(antiAir.getX(), antiAir.getY());
+    
+                            // Retirer l'anti-air et le projectile de leurs listes respectives
+                            objects.removeValue(antiAir, true);
+                            projectiles.removeIndex(i);
+                            i--; // Réajuster l'index après suppression
+                            break; // Sortir de la boucle pour ce projectile
+                        }
                     }
                 }
             }
@@ -371,6 +406,7 @@ public class GameScreen implements Screen {
     }
     
 
+    // ------------------------------------------------------- modifier hier -----------------------
     private void updateProjectiles(float delta) {
         for (int i = 0; i < projectiles.size; i++) {
             Projectile projectile = projectiles.get(i);
@@ -382,6 +418,9 @@ public class GameScreen implements Screen {
                 projectiles.removeIndex(i);
             }
         }
+
+        handleAntiAirCollisions();
+
         for (int i = 0; i < enemyProjectiles.size; i++) {
             Projectile projectile = enemyProjectiles.get(i);
             projectile.update(Gdx.graphics.getDeltaTime());
@@ -396,16 +435,20 @@ public class GameScreen implements Screen {
     
 
     public void createFlyingEnemy()
-
     {
 
         ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
         Plane avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
-        while (checkEnemyCollision(avion)) {
+        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
+        Plane brit = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
+        while (checkCollisionSpawn(avion) && checkCollisionSpawn(brit)) {
             ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
             avion = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
+            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
+            brit = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
         }
         FlyingEnemies.add(avion);
+        FlyingEnemies.add(brit);
         lastEnemySpawnTime = elapsedTime;
     }
 
@@ -459,8 +502,11 @@ public class GameScreen implements Screen {
                 AdvancedEnemy = (British) avion;
                 AdvancedEnemy.update();
             }
-            if (avion.getX() < 20 || avion.getHp() == 0) {
-                explode(avion.getX(), avion.getY());
+            // Supprimer l'avion s'il sort de l'écran
+            if (avion.getX() < -avion.getWidth() || avion.getHp() == 0) {
+                if (avion.getHp() == 0) {
+                    explode(avion.getX(), avion.getY());
+                }
                 iter.remove();
             }
         }
