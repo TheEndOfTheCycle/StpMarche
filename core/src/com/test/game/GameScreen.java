@@ -1,0 +1,651 @@
+package com.test.game;
+
+import java.util.Iterator;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Buttons;
+import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+import com.test.game.explosion.Explosion;
+import com.test.game.graphics.AntiAir;
+import com.test.game.graphics.Wall;
+import com.test.game.graphics.WallParser;
+import com.test.game.graphics.Zeppelin;
+import com.test.game.planes.Artillery;
+import com.test.game.planes.British;
+import com.test.game.planes.French;
+import com.test.game.planes.Plane;
+import com.test.game.planes.BossFinale;
+import com.test.game.planes.Red;
+import com.test.game.shoots.Bomb;
+import com.test.game.shoots.Bullets;
+import com.test.game.shoots.Projectile;
+
+public class GameScreen implements Screen {
+    // Son
+    Sound sonJeu = Gdx.audio.newSound(Gdx.files.internal("Music/Red-B.mp3"));
+    // Caméra et viewport
+    private final OrthographicCamera camera;
+    private final Viewport viewport;
+    // Graphismes
+    private final SpriteBatch batch;
+    private final Texture background;
+    private BitmapFont scoreFont;
+    // Défilement du fond
+    private final int backgroundOffset;
+
+    private final int WORLD_WIDTH = 800;
+    private final int WORLD_HEIGHT = 480;
+
+    private final float ENEMY_SPAWN_TIME = 0;
+    private final float FRENCH_ENEMY_SPEED = 3;
+    private final Test game;
+
+    Array<Object> objects; // Liste des objects
+    float scrollSpeed = 100.f;
+    ShapeRenderer shape;
+    private int score = 0;
+    Red player;
+    private final Array<Projectile> projectiles;
+    final int PLAYER_START_LINE_Y = 200;
+    final int PLAYER_START_LINE_X = 0;
+    
+    // Animation
+    private TextureAtlas explosionAtlas;
+    private Animation<TextureRegion> explosionAnimation;
+    private Array<Explosion> explosions;
+    private float explosionElapsedTime = 0f;
+    private boolean explosionStarted = false;
+    private float explosionX, explosionY;
+    // Enemies
+    private final Array<Plane> FlyingEnemies;
+    private final Array<Artillery> Fire_Support;
+    private final float FIRE_SUPPORT_SPEED = 300;
+    float lastEnemySpawnTime;
+    float lastShellSpawnTime;
+    long startTime;
+    long elapsedTime;
+    French BasicEnemy;
+    British AdvancedEnemy;
+    private final int ENEMY_SPAWN_LEVEL_X = Gdx.graphics.getWidth();
+    private int ENEMY_SPAWN_LEVEL_Y = Gdx.graphics.getHeight() - 50;
+    private final int FLYING_ENEMY_SPAWN_INTERVAL = 1000;
+    private final int FIRE_SUPPORT_SPAWN = 4000;
+
+    private TextureRegion backgroundRegion;
+    private final Array<Projectile> enemyProjectiles;
+
+    private BossFinale boss;
+    
+
+    // Constructeur de la classe
+    public GameScreen(final Test game) {
+        this.game = game;
+        this.game.addScreen(this);
+
+        boss = new BossFinale(Gdx.graphics.getWidth() - BossFinale.FINAL_WIDTH, Gdx.graphics.getHeight() / 2 - BossFinale.FINAL_HEIGHT / 2);
+
+
+        camera = new OrthographicCamera();
+        viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
+        startTime = TimeUtils.millis();
+        background = new Texture("BackGroundImages/mapBoss.png");
+        backgroundRegion = new TextureRegion(background);// image de fond
+        backgroundOffset = 0;
+        Fire_Support = new Array<>();
+        camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
+        batch = new SpriteBatch();
+        shape = new ShapeRenderer();
+        scoreFont = new BitmapFont();
+        objects = WallParser.parseWalls("Map/MapBoss.txt");
+        player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
+        FlyingEnemies = new Array<>();
+        enemyProjectiles = new Array<>();
+
+
+        // Charger l'animation d'explosion
+        explosionAtlas = new TextureAtlas(Gdx.files.internal("atlas/kisspng-sprite-explosion_pack.atlas"));
+        explosionAnimation = new Animation<>(0.1f, explosionAtlas.getRegions());
+
+        projectiles = new Array<>();
+        explosions = new Array<>();
+
+        // Ajouter un listener d'entrée pour détecter les clics de la souris et la barre
+        // d'espace
+        Gdx.input.setInputProcessor(new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (!player.getGameOver() && button == Buttons.LEFT) {
+                    createBullet();
+                }
+                return true;
+            }
+
+            @Override
+            public boolean keyDown(int keycode) {
+                if (!player.getGameOver() && keycode == Input.Keys.SPACE) {
+                    createBomb();
+                }
+                return true;
+            }
+        });
+    }
+
+    public void update() {
+        if (elapsedTime - lastEnemySpawnTime >= FLYING_ENEMY_SPAWN_INTERVAL) {// si la difference entre le temps
+                                                                              // courrant et le temps du dernier
+                                                                              // spawn est superieur au temps de
+                                                                              // génération des enemies
+            createFlyingEnemy();
+            // System.err.println("elapsed time" + elapsedTime + "derneri spawn" +
+            // lastEnemySpawnTime);
+
+            // System.err.println("yes");
+        }
+        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN) {
+            createSupportEnemy();
+        }
+    }
+
+    private void MapGeneration() {
+        float delta = Gdx.graphics.getDeltaTime();
+        ScreenUtils.clear(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    
+        batch.begin();
+        batch.draw(backgroundRegion, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        updateObjects(delta);
+        drawObjects();
+        checkPlayerCollisions();
+
+        batch.end();
+    }
+
+    private void updateObjects(float delta) {
+        // Calculer la largeur totale de la carte
+        int mapWidth = WallParser.calculateMapWidth("Map/MapBoss.txt");
+
+        // Mettre à jour les objets
+        for (Object object : objects) {
+            if (!player.getGameOver()) {
+                if (object instanceof Wall) {
+                    Wall wall = (Wall) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = wall.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -Wall.WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    wall.setX(newX);
+                } else if (object instanceof Zeppelin) {
+                    Zeppelin zep = (Zeppelin) object;
+                    // Mettre à jour les coordonnées X du Zeppelin pour le faire défiler de gauche à
+                    // droite
+                    zep.setPosition(zep.getPosition().x - scrollSpeed * delta, zep.getPosition().y);
+
+                    if (zep.getPosition().x < -70) {
+                        zep.setPosition(mapWidth, zep.getPosition().y);
+                    }
+                }else if (object instanceof AntiAir) {
+                    AntiAir groundEnemy = (AntiAir) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = groundEnemy.getX() - scrollSpeed * delta;
+    
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+    
+                    // Mettre à jour la position du mur
+                    groundEnemy.setX(newX);
+    
+                    // Tirer vers l'avion si à portée
+                    groundEnemy.update(delta, player, projectiles);
+                } 
+            }
+        }
+    }
+
+    private void checkPlayerCollisions() {
+        // Vérifier les collisions entre le joueur et les murs
+        for (Object object : objects) {
+            if (!player.getGameOver()) {
+                if (object instanceof Wall) {
+                    Wall wall = (Wall) object;
+                    if (player.checkCollision(wall)) {
+                        handlePlayerCollision();
+                    }
+                } else if (object instanceof Zeppelin) {
+                    Zeppelin zeppelins = (Zeppelin) object;
+                    if (player.checkCollision(zeppelins)) {
+                        handlePlayerCollision();
+                    }
+                } else if (object instanceof Bomb) {
+                    Bomb bomb = (Bomb) object;
+                    // Vérifier la collision entre la bombe et les éléments de la carte
+                    if (bombCollision(bomb)) {
+                        // Produire l'animation d'explosion
+                        explode(bomb.getX(), bomb.getY());
+                        // Retirer la bombe de la liste
+                        objects.removeValue(bomb, true);
+                    }
+                }
+                for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie
+                    if (player.checkCollision(avion)) {
+                        handlePlayerCollision();
+                    }
+                }
+            }
+        }
+
+    }
+
+    public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des enemies seulment
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall mur = (Wall) object;
+                if (avion.checkCollision(mur)) {
+                    avion.setSpeed(-avion.getSpeed());
+                    return false;
+                }
+            }
+
+        }
+        if (player.checkCollision(avion)) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean checkCollisionSpawn(Plane avion) {// on gere la collisoin des enemies seulment
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall mur = (Wall) object;
+                if (avion.checkCollision(mur)) {
+                    return true;
+                }
+            }
+
+        }
+        if (player.checkCollision(avion)) {
+            return true;
+        }
+        return false;
+    }
+
+    // cette fonction va gerer les avoins lorsque ils se prennent des degats
+    public void handleDamagedFlyingEnemy() {
+        for (Projectile tire : projectiles) {
+            for (Plane avion : FlyingEnemies) {
+                if (avion.collidesWith(tire)) {
+                    avion.setHp(avion.getHp() - 1);
+                    tire.setHit(true);
+                    if (avion.getHp() == 0) {
+                        avion.setIsDeadByFireHit(true);
+                        // System.err.println("mort par tire");
+                        if (avion instanceof French) {
+                            score += French.getScoreValue();
+                        }
+                    } else {
+                        System.out.println("nonnnn");
+                    }
+                }
+            }
+        }
+    }
+
+        // ------------------------------------------------------- modifier hier -----------------------
+
+    private void handleAntiAirCollisions() {
+        for (int i = 0; i < projectiles.size; i++) {
+            Projectile projectile = projectiles.get(i);
+            if (projectile instanceof Bomb) {
+                for (Object object : objects) {
+                    if (object instanceof AntiAir) {
+                        AntiAir antiAir = (AntiAir) object;
+                        if (antiAir.collidesWith(projectile)) {
+                            // Créer une explosion à la position de l'anti-air
+                            explode(antiAir.getX(), antiAir.getY());
+    
+                            // Retirer l'anti-air et le projectile de leurs listes respectives
+                            objects.removeValue(antiAir, true);
+                            projectiles.removeIndex(i);
+                            i--; // Réajuster l'index après suppression
+                            break; // Sortir de la boucle pour ce projectile
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void handlePlayerCollision() {
+        // Produire l'animation d'explosion pour le joueur
+        explode(player.getX(), player.getY());
+        player.setGameOver(true); // Marquer le jeu comme terminé
+    }
+
+    public void handleEnemyCollision() {// cette fonction gere la mort d un enemie
+        for (Plane avion : FlyingEnemies) {
+            if (checkEnemyCollision(avion)) {
+                explode(avion.getX(), avion.getY());
+                avion.setHp(0);
+            }
+        }
+    }
+
+    private boolean bombCollision(Bomb bomb) {
+        // Parcourir tous les murs de la carte pour vérifier la collision avec la bombe
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall wall = (Wall) object;
+                // Vérifier si la bombe entre en collision avec le mur
+                if (bomb.getX() + Bomb.WIDTH >= wall.getX() && bomb.getX() <= wall.getX() + Wall.WIDTH
+                        && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
+                    return true; // Collision détectée avec un mur
+                }
+            }
+        }
+        return false; // Aucune collision détectée avec un mur
+    }
+
+    private void explode(float x, float y) {
+        explosions.add(new Explosion(x, y, explosionAnimation));
+    }
+
+    private void drawObjects() {
+        // Dessiner tous les objets, même si le jeu est terminé
+        for (Object object : objects) {
+            if (object instanceof Wall) {
+                Wall wall = (Wall) object;
+                wall.draw(batch);
+            } else if (object instanceof Zeppelin) {
+                Zeppelin zep = (Zeppelin) object;
+                zep.draw(batch);
+            } else if (object instanceof AntiAir) {
+                AntiAir groundEnemy = (AntiAir) object;
+                groundEnemy.draw(batch);
+            }
+        }
+    }
+
+    private void createBullet() {
+        Bullets bullet = new Bullets(player.getX() + player.getWidth(), player.getY() + player.getHeight() / 2, 300f);
+        projectiles.add(bullet);
+    }
+
+    private void createBomb() {
+        Bomb bomb = new Bomb(player.getX() + player.getWidth() / 2, player.getY(), 200f);
+        projectiles.add(bomb);
+    }
+
+    private void drawProjectiles() {
+        batch.begin();
+        for (Projectile projectile : projectiles) {
+            projectile.draw(batch);
+        }
+        for (Projectile projectile : enemyProjectiles) {
+            projectile.draw(batch);
+        }
+        batch.end();
+    }
+    
+
+    // ------------------------------------------------------- modifier hier -----------------------
+    private void updateProjectiles(float delta) {
+        for (int i = 0; i < projectiles.size; i++) {
+            Projectile projectile = projectiles.get(i);
+            projectile.update(delta);
+            if (projectile.isOutOfScreen() || projectile.getHit() == true) {
+                projectiles.removeIndex(i);
+            } else if (projectile instanceof Bomb && bombCollision((Bomb) projectile)) {
+                explode(projectile.getX(), projectile.getY());
+                projectiles.removeIndex(i);
+            }
+        }
+
+        handleAntiAirCollisions();
+
+        for (int i = 0; i < enemyProjectiles.size; i++) {
+            Projectile projectile = enemyProjectiles.get(i);
+            projectile.update(Gdx.graphics.getDeltaTime());
+            if (projectile.isOutOfScreen() || projectile.getHit() == true) {
+                enemyProjectiles.removeIndex(i);
+            } else {
+                // Vous pouvez ajouter des vérifications de collision avec le joueur ici
+                // par exemple: if (player.checkCollision(projectile)) { handlePlayerCollision(); }
+            }
+        }
+    }
+    
+
+    public void createFlyingEnemy()
+
+    {
+
+     
+        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
+        Plane brit = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
+        while (checkCollisionSpawn(brit)) {
+        
+            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
+            brit = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40, FRENCH_ENEMY_SPEED);
+        }
+        FlyingEnemies.add(brit);
+        lastEnemySpawnTime = elapsedTime;
+    }
+
+    public void createSupportEnemy() {
+        Fire_Support.add(new Artillery(MathUtils.random(30, Gdx.graphics.getWidth() - 30), Gdx.graphics.getHeight(), 50,
+                20, FIRE_SUPPORT_SPEED));
+        lastShellSpawnTime = elapsedTime;
+    }
+
+    public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        avion.update();
+        avion.draw(shape);
+        shape.end();
+    }
+
+    public void UpdateSupportEnemy() {
+        Iterator<Artillery> iter = Fire_Support.iterator();
+        while (iter.hasNext()) {
+            Artillery fire = iter.next();
+            fire.update();
+            if (fire.getY() < 0) {
+                iter.remove();
+            }
+        }
+        for (Artillery fire : Fire_Support) {
+            SpawnFlyingEnemy(fire);
+        }
+    }
+
+    public void SpawnFlyingEnemy(Plane avion) {// fonction permet de dessiner un enemi
+        // avion.setStartY(ENEMY_SPAWN_LEVEL_X);
+        // sshape.begin(ShapeRenderer.ShapeType.Filled);
+        batch.begin();
+        avion.draw(batch);
+        batch.end();
+        // on obtient le temps courrent durant le jeu
+    }
+
+    public void UpdateFlyingEnemy() {
+        // Cette fonction gère les mouvements et l'état des ennemis
+        handleDamagedFlyingEnemy();
+        Iterator<Plane> iter = FlyingEnemies.iterator();
+        while (iter.hasNext()) {
+            Plane avion = iter.next();
+            if (avion instanceof French) {
+                BasicEnemy = (French) avion;
+                BasicEnemy.update(Gdx.graphics.getDeltaTime(), enemyProjectiles);
+                BasicEnemy.update();  // Assurez-vous d'appeler la méthode update sans paramètre
+            } else if (avion instanceof British) {
+                AdvancedEnemy = (British) avion;
+                AdvancedEnemy.update();
+            }
+            // Supprimer l'avion s'il sort de l'écran
+            if (avion.getX() < -avion.getWidth() || avion.getHp() == 0) {
+                if (avion.getHp() == 0) {
+                    explode(avion.getX(), avion.getY());
+                }
+                iter.remove();
+            }
+        }
+        for (Plane avion : FlyingEnemies) {
+            if (avion instanceof French) {
+                BasicEnemy = (French) avion;
+                SpawnFlyingEnemy(BasicEnemy);
+            }
+            if (avion instanceof British) {
+                AdvancedEnemy = (British) avion;
+                SpawnFlyingEnemy(avion);
+            }
+        }
+    }
+    
+    
+
+    private void renderExplosions(float delta) {
+        batch.begin();
+        for (int i = 0; i < explosions.size; i++) {
+            Explosion explosion = explosions.get(i);
+            explosion.update(delta);
+            explosion.draw(batch);
+            if (explosion.isFinished()) {
+                explosions.removeIndex(i);
+                i--; // Réajuster l'index après suppression
+            }
+        }
+        batch.end();
+    }
+
+    @Override
+    public void render(float delta) {
+        game.batch.setProjectionMatrix(camera.combined);
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    
+        MapGeneration();
+    
+        if (!player.getGameOver()) {
+            elapsedTime = TimeUtils.timeSinceMillis(startTime);
+            update();
+            renderGamePlay();
+            UpdateFlyingEnemy();
+            UpdateSupportEnemy();
+            handleEnemyCollision();
+        } else {
+            renderGameOver();
+        }
+    
+        updateProjectiles(delta);
+        drawProjectiles();
+    
+        if (!player.getGameOver()) {
+            renderExplosions(delta);
+        }
+    }
+    
+
+
+    private void renderGamePlay() {
+        // Mettre à jour et dessiner le joueur
+        batch.begin();
+        player.update();
+        player.draw(batch);
+        player.drawHealth(batch);
+        scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
+        
+        // Mettre à jour et dessiner le boss final
+        boss.update(Gdx.graphics.getDeltaTime(), player, projectiles);
+        boss.draw(batch);
+    
+        batch.end();
+    }
+
+    private void renderGameOver() {
+        // Afficher l'animation d'explosion
+        if (!explosionStarted) {
+            explosionX = player.getX();
+            explosionY = player.getY();
+            explosionStarted = true;
+        }
+
+        batch.begin();
+        explosionElapsedTime += Gdx.graphics.getDeltaTime();
+        TextureRegion currentFrame = explosionAnimation.getKeyFrame(explosionElapsedTime, false);
+        batch.draw(currentFrame, explosionX, explosionY, player.getWidth(), player.getHeight());
+        batch.end();
+
+        if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
+            // Animation terminée, ne rien dessiner
+            game.jeuScreen.sonJeu.dispose();
+            game.overScreen = new GameOverScreen(game);
+            game.setScreen(game.overScreen);
+            game.overScreen.sonDeath.play();
+            dispose();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        batch.dispose();
+        explosionAtlas.dispose();
+        for (Projectile projectile : projectiles) {
+            projectile.dispose();
+        }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        camera.viewportWidth = width;
+        camera.viewportHeight = height;
+        camera.update();
+    
+        // Mettre à jour la région de texture pour l'image de fond
+        backgroundRegion.setRegion(backgroundRegion , 0, 0, background.getWidth(), background.getHeight());
+        backgroundRegion.setRegionWidth(width);
+        backgroundRegion.setRegionHeight(height);
+    }
+    @Override
+    public void show() {
+        // start the playback of the background music when the screen is shown
+        // rainMusic.play();
+    }
+
+    @Override
+    public void hide() {
+    }
+
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+}
