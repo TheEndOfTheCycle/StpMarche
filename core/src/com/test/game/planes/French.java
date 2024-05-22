@@ -10,14 +10,13 @@ public class French extends Plane {
 
     float speed;
     private static int SCORE_VALUE = 1;
-    private final static Texture TEXTURE_FRENCH = new Texture(Gdx.files.internal("Planes/french.png"));
     private float timeSinceLastShot = 0;
     private float shootingInterval = 0.5f;
 
     private final int BULLET_SPEED = 100;
 
     // Constructeur de la classe
-    public French(int x, int y, int height, int width, float speed) {
+    public French(int x, int y, int height, int width, float speed, Texture TEXTURE_FRENCH) {
         super(x, y, height, width, TEXTURE_FRENCH);
         setSpeed(speed);
         setHp(1);

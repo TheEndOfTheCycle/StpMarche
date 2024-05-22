@@ -119,20 +119,9 @@ public class Plane {
 
     public boolean collidesWith(Projectile projectile) {
 
-        if (projectile instanceof SolAir) {
-            SolAir tempo = (SolAir) projectile;
-            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
-                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()) + tempo.HEIGHT);
-        }
-        if (projectile instanceof Tate) {
-            Trump tempo = (Trump) projectile;
-            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
-                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()) - tempo.HEIGHT);
-        } else {
+        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
+                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
 
-            return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
-                    && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
-        }
     }
 
     // verification des collisions avec le Wall

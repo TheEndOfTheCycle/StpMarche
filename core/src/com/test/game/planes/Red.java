@@ -15,6 +15,7 @@ public class Red extends Plane {
     private static int health_spread_x;
     public Texture HealthTexture;
     public Sound sonTire = Gdx.audio.newSound(Gdx.files.internal("SoundEffects/Shot.mp3"));
+    public Sound sonBomb = Gdx.audio.newSound(Gdx.files.internal("SoundEffects/Bomb.mp3"));
 
     // Constructeur de la classe
     public Red(int x, int y) {

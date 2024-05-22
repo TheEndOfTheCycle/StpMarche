@@ -66,11 +66,12 @@ public class GameScreen implements Screen {
     private final SpriteBatch batch;
     private Texture background;
     private BitmapFont scoreFont;
+    private BitmapFont FontObjective;
     int mapWidth;
     private final String CARET1 = "Map/LatestMap.txt";// ces variables representent les niveaux a charger,pas les images
                                                       // de
                                                       // fond
-    private final String CARET2 = "Map/carte2.txt";// a changer pour generer une nouvelle map
+    private final String CARET2 = "Map/carte3.txt";// a changer pour generer une nouvelle map
     private final String CARET3 = "Map/MapBoss.txt";
     private TextureRegion backgroundRegion;
     // Défilement du fond
@@ -94,6 +95,7 @@ public class GameScreen implements Screen {
     private final Array<Projectile> enemyProjectiles;
     final int PLAYER_START_LINE_Y = 200;
     final int PLAYER_START_LINE_X = 0;
+    private String objective;// objective pour pouvoir passer au prochain niveau
     // Animation
     private TextureAtlas explosionAtlas;
     private Animation<TextureRegion> explosionAnimation;
@@ -105,6 +107,8 @@ public class GameScreen implements Screen {
     private final Array<Plane> FlyingEnemies;
     private final Array<Artillery> Fire_Support;
     private final float FIRE_SUPPORT_SPEED = 300;
+    private final Texture TEXTURE_FRENCH;
+    private final Texture TEXTURE_BRITISH;
     float lastEnemySpawnTime;
     float lastShellSpawnTime;
     long startTime;
@@ -122,6 +126,7 @@ public class GameScreen implements Screen {
     private final int ENEMY_SPAWN_RATIO = 50;// ratio du spawn entre les ennemies French et British
     private int spawnType = 1;// si 1 on spawn french,si 2 on spawn british
     private final int BASIC_DEATH_REQ = 2;// combien d enemies basics il faut tuer pour passer au niveau suivant
+    private final int ANTI_AIR_REQ = 2;
     // Buff
     private Plane enemyspawn;
     private final int BUFF_SPAWN_TIME = 5000;
@@ -167,9 +172,12 @@ public class GameScreen implements Screen {
         batch = new SpriteBatch();
         shape = new ShapeRenderer();
         scoreFont = new BitmapFont();
+        FontObjective = new BitmapFont();
         // objects = WallParser.parseWalls("Map/test.txt");
         player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
         FlyingEnemies = new Array<>();
+        TEXTURE_FRENCH = new Texture(Gdx.files.internal("Planes/french.png"));
+        TEXTURE_BRITISH = new Texture(Gdx.files.internal("Planes/british.png"));
         // Charger l'animation d'explosion
         explosionAtlas = new TextureAtlas(Gdx.files.internal("atlas/kisspng-sprite-explosion_pack.atlas"));
         explosionAnimation = new Animation<>(0.1f, explosionAtlas.getRegions());
@@ -214,7 +222,10 @@ public class GameScreen implements Screen {
                 if (keycode == Input.Keys.SPACE && !player.getGameOver()) {
                     createBomb();
                 }
+                if (game.getScreen().getClass() == GameScreen.class) {// pour declencher l
 
+                    player.sonBomb.play(SHOOTING_VOULME);
+                }
                 return true;
             }
         });
@@ -464,10 +475,11 @@ public class GameScreen implements Screen {
                         // avion.setIsDeadByFireHit(true);
                         // System.err.println("mort par tire");
                         if (avion instanceof French) {
-                            score += French.getScoreValue();
+                            game.ScoreTotale += French.getScoreValue();
+                            game.BasicEnemyDeath++;
                         }
                         if (avion instanceof British) {
-                            score += British.getScoreValue();
+                            game.ScoreTotale += British.getScoreValue();
                         }
                     }
                 }
@@ -498,7 +510,7 @@ public class GameScreen implements Screen {
         handleAntiAirCollisions();
     }
 
-    private void handleAntiAirCollisions() {
+    private void handleAntiAirCollisions() {// on gere la collison des anti air avec les bombes largues par l enemie
         for (int i = 0; i < projectiles.size; i++) {
             Projectile projectile = projectiles.get(i);
             if (projectile instanceof Bomb) {
@@ -508,7 +520,10 @@ public class GameScreen implements Screen {
                         if (antiAir.collidesWith(projectile)) {
                             // Créer une explosion à la position de l'anti-air
                             explode(antiAir.getX(), antiAir.getY());
-
+                            game.ScoreTotale += AntiAir.getScoreValue();// on modifie le score
+                            if (game.getCurrentMap() == 2) {
+                                game.AntiAirDeath++;
+                            }
                             // Retirer l'anti-air et le projectile de leurs listes respectives
                             objects.removeValue(antiAir, true);
                             projectiles.removeIndex(i);
@@ -612,7 +627,7 @@ public class GameScreen implements Screen {
             }
             if (tire instanceof Trump) {
                 Trump tempo = (Trump) tire;
-                // tempo.update(delta);
+                tempo.update(delta);
 
             }
             if (tire instanceof AmungUs) {
@@ -642,25 +657,33 @@ public class GameScreen implements Screen {
     {
 
         ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
-        if (MathUtils.random(1, 100) > ENEMY_SPAWN_RATIO) {
-            spawnType = 1;
+        if (game.getCurrentMap() == 1) {
             enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                    FRENCH_ENEMY_SPEED);
-        } else {
-            spawnType = 2;
-            enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                    BRITISH_ENEMY_SPEED);
+                    FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
         }
+        if (game.getCurrentMap() == 2) {// le 2eme type d enemies apprait uniquement sur la 2eme carte et aleatoirment
+            if (MathUtils.random(1, 100) > ENEMY_SPAWN_RATIO) {
+                spawnType = 1;
+                enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                        FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
+            } else {
 
+                spawnType = 2;
+                enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                        BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
+
+            }
+        }
         while (checkCollisionSpawn(enemyspawn)) {
             ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
             if (spawnType == 1) {
                 enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        FRENCH_ENEMY_SPEED);
+                        FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
             }
-            if (spawnType == 2) {
+            if (spawnType == 2) {// on ne spawn le type d enemies british ssi on est sur la
+                                 // 2eme map
                 enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        BRITISH_ENEMY_SPEED);
+                        BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
             }
         }
         FlyingEnemies.add(enemyspawn);
@@ -798,10 +821,12 @@ public class GameScreen implements Screen {
         if (!player.getGameOver()) {
             renderExplosions(delta);
         }
-        if (score > 3) {
+        if (game.getCurrentMap() == 1 && game.BasicEnemyDeath == BASIC_DEATH_REQ) {
             renderWin();
         }
-
+        if (game.getCurrentMap() == 2 && game.AntiAirDeath == ANTI_AIR_REQ) {
+            renderWin();
+        }
     }
 
     private void renderGamePlay() {
@@ -812,11 +837,16 @@ public class GameScreen implements Screen {
         handleBuffSpawn();
         player.draw(batch);
         player.drawHealth(batch);
-        scoreFont.draw(batch, "Score :" + score, 20, Gdx.graphics.getHeight() - 30);
+        objective = game.getCurrentMap() != 2 ? ("French killed :" + game.BasicEnemyDeath)
+                : ("Anti-Air destroyed :" + game.AntiAirDeath);
+        if (game.getCurrentMap() == 3) {
+            objective = "Kill Boss";
+        }
+        FontObjective.draw(batch, objective, 20, Gdx.graphics.getHeight() - 50);
+        scoreFont.draw(batch, "Score :" + game.ScoreTotale, 20, Gdx.graphics.getHeight() - 30);
         if (BossSlevel) {
             boss.update(Gdx.graphics.getDeltaTime(), player, enemyProjectiles);
             boss.draw(batch);
-            System.err.println("taille " + enemyProjectiles.size);
         }
         batch.end();
 
@@ -865,7 +895,6 @@ public class GameScreen implements Screen {
         WinLevelScreen ecran = new WinLevelScreen(game);
         game.WinScreen = ecran;
         // score = score;
-        game.ScoreTotale += score;
         game.setScreen(game.WinScreen);
         // score = 0;// temporairment on met le score a 0
 
@@ -893,10 +922,6 @@ public class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        camera.viewportWidth = width;
-        camera.viewportHeight = height;
-        camera.update();
 
         // Mettre à jour la région de texture pour l'image de fond
 

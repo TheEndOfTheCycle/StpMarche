@@ -54,6 +54,7 @@ public class HowToPlayScreen implements Screen {
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.B) {
                     game.setScreen(game.menu);
+                    dispose();
                 }
                 return true;
             }

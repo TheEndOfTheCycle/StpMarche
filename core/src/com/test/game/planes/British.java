@@ -10,7 +10,6 @@ public class British extends Plane {
     private float speed;
     private float timeSinceLastShot = 0;
     private float shootingInterval = 2.0f;
-    private static final Texture TEXTURE_BRITISH = new Texture(Gdx.files.internal("Planes/british.png"));
     private final static int SCORE_VALUE = 2;
     private final float Yspeed = 50; // Vitesse verticale (arbitraire, peut être ajustée)
     private final float OriginalAltitude; // Altitude de départ de l'avion
@@ -20,7 +19,7 @@ public class British extends Plane {
     private boolean movingUp; // Indicateur de direction
 
     // Constructeur de la classe
-    public British(int x, int y, int height, int width, float speed) {
+    public British(int x, int y, int height, int width, float speed, Texture TEXTURE_BRITISH) {
         super(x, y, height, width, TEXTURE_BRITISH);
         this.speed = speed;
         setHp(1);

@@ -13,6 +13,7 @@ public class AntiAir extends MapObjects {
     private float timeSinceLastShot = 0.0f;
     public final static int RED_WIDTH = 100;
     private final static int RED_HEIGHT = 76;
+    private static final int SCORE_VALUE = 3;
     private final static Texture TEXTURE_RED = new Texture(Gdx.files.internal("BackGroundImages/anti.png"));
 
     // Constructeur de la classe
@@ -46,5 +47,9 @@ public class AntiAir extends MapObjects {
     public boolean collidesWith(Projectile projectile) {
         return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
                 && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
+    }
+
+    public static int getScoreValue() {
+        return SCORE_VALUE;
     }
 }

@@ -23,4 +23,5 @@ public class SolAir extends Projectile {
         // Dessiner le projectile ici
         batch.draw(texture, x, y, 50, 50);
     }
+
 }

@@ -64,7 +64,7 @@ public class MenuScreen implements Screen {
 
     }
 
-    public void handleMenu() {
+    public void handleMenu() {// on gere les autres sreens selon la touch saisie
         Gdx.input.setInputProcessor(new InputAdapter() {
 
             public boolean keyDown(int keycode) {
@@ -72,10 +72,12 @@ public class MenuScreen implements Screen {
                     game.jeuScreen = new GameScreen(game, game.getCurrentMap());
                     game.setScreen(game.jeuScreen);
                     game.menu.sonMenu.dispose();
+                    game.menu.dispose();
                 }
                 if (keycode == Input.Keys.H) {
                     game.HowToPlayScreen = new HowToPlayScreen(game);
                     game.setScreen(game.HowToPlayScreen);
+                    game.menu.dispose();
                 }
                 return true;
             }

@@ -21,6 +21,10 @@ public class GameOverScreen implements Screen {
         this.game = game;
         camera = new OrthographicCamera();
         camera.setToOrtho(false, VIEW_PORT_WIDTH, VIEW_PORT_HEIGHT);
+        game.ScoreTotale = 0;
+        game.BasicEnemyDeath = 0;
+        game.AntiAirDeath = 0;
+        game.setCurrentMap(1);
     }
 
     public void draw(SpriteBatch batch) {
