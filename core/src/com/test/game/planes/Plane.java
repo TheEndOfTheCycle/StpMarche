@@ -1,29 +1,35 @@
+/**
+ * Représente un avion dans le jeu.
+ */
 package com.test.game.planes;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.Zeppelin;
 import com.test.game.shoots.Projectile;
-import com.test.game.shoots.SolAir;
-import com.test.game.shoots.Tate;
-import com.test.game.shoots.Trump;
 
 public class Plane {
 
-    protected float x;
-    protected float y;
-    private final int width;
-    private final int height;
-    private Texture texture;
-    private boolean isFireHit = false;// cette variable permet de savoir si l'avion est touche par un projectile
-    private boolean deadByFireHit = false;// mort par projectile du joueur ou pas
-    protected boolean gameOver = false;
-    private int hp;
+    protected float x; // Coordonnée x de l'avion
+    protected float y; // Coordonnée y de l'avion
+    private final int width; // Largeur de l'avion
+    private final int height; // Hauteur de l'avion
+    private Texture texture; // Texture de l'avion
+    private boolean isFireHit = false; // Indique si l'avion a été touché par un projectile
+    protected boolean deadByFireHit = false; // Indique si l'avion est détruit par un projectile
+    protected boolean gameOver = false; // Indique si le jeu est terminé
+    private int hp; // Points de vie de l'avion
 
-    // Constructeur du Plane
+    /**
+     * Construit un nouvel avion avec les coordonnées, les dimensions et la texture spécifiées.
+     *
+     * @param x Coordonnée x de l'avion
+     * @param y Coordonnée y de l'avion
+     * @param width Largeur de l'avion
+     * @param height Hauteur de l'avion
+     * @param texture Texture de l'avion
+     */
     public Plane(float x, float y, int width, int height, Texture texture) {
         setX(x);
         setY(y);
@@ -32,118 +38,234 @@ public class Plane {
         setTexture(texture);
     }
 
+    /**
+     * Définit si l'avion a été touché par un projectile.
+     *
+     * @param etat true si l'avion a été touché, false sinon
+     */
     public void setIsFireHit(boolean etat) {
         this.isFireHit = etat;
     }
 
+    /**
+     * Retourne true si l'avion a été touché par un projectile, false sinon.
+     *
+     * @return true si l'avion a été touché, false sinon
+     */
     public boolean getIsFireHit() {
         return isFireHit;
     }
 
+    /**
+     * Définit si l'avion est détruit par un projectile.
+     *
+     * @param etat true si l'avion est détruit, false sinon
+     */
     public void setIsDeadByFireHit(boolean etat) {
         this.deadByFireHit = etat;
     }
 
+    /**
+     * Retourne true si l'avion est détruit par un projectile, false sinon.
+     *
+     * @return true si l'avion est détruit, false sinon
+     */
     public boolean getIsDeadByFireHit() {
         return isFireHit;
     }
 
-    // Getters and Setters
+    /**
+     * Retourne la coordonnée x de l'avion.
+     *
+     * @return Coordonnée x de l'avion
+     */
     public float getX() {
         return x;
     }
 
+    /**
+     * Définit la coordonnée x de l'avion.
+     *
+     * @param x Coordonnée x de l'avion
+     */
     public final void setX(float x) {
         this.x = x;
     }
 
+    /**
+     * Retourne la coordonnée y de l'avion.
+     *
+     * @return Coordonnée y de l'avion
+     */
     public float getY() {
         return y;
     }
 
+    /**
+     * Définit la coordonnée y de l'avion.
+     *
+     * @param y Coordonnée y de l'avion
+     */
     public final void setY(float y) {
         this.y = y;
     }
 
+    /**
+     * Retourne la largeur de l'avion.
+     *
+     * @return Largeur de l'avion
+     */
     public int getWidth() {
         return width;
     }
 
+    /**
+     * Retourne la hauteur de l'avion.
+     *
+     * @return Hauteur de l'avion
+     */
     public int getHeight() {
         return height;
     }
 
+    /**
+     * Retourne la texture de l'avion.
+     *
+     * @return Texture de l'avion
+     */
     public Texture getTexture() {
         return texture;
     }
 
+    /**
+     * Définit la texture de l'avion.
+     *
+     * @param texture Texture de l'avion
+     */
     public final void setTexture(Texture texture) {
         this.texture = texture;
     }
 
+    /**
+     * Définit les points de vie de l'avion.
+     *
+     * @param hp Points de vie de l'avion
+     */
     public void setHp(int hp) {
         this.hp = hp;
     }
 
+    /**
+     * Retourne les points de vie de l'avion.
+     *
+     * @return Points de vie de l'avion
+     */
     public int getHp() {
         return hp;
     }
 
-    // Utilisez SpriteBatch pour dessiner la texture des avions
+    /**
+     * Dessine l'avion sur le SpriteBatch spécifié.
+     *
+     * @param batch SpriteBatch sur lequel dessiner l'avion
+     */
     public void draw(SpriteBatch batch) {
         batch.draw(getTexture(), getX(), getY(), getWidth(), getHeight());
     }
 
-    public void update() {
+    /**
+     * Met à jour l'état de l'avion.
+     */
+    public void update() {}
 
-    }
-
-    // Verification des collisions entre l'avion et le décore
+    /**
+     * Vérifie si l'avion entre en collision avec un mur.
+     *
+     * @param wall Mur à vérifier
+     * @return true si l'avion entre en collision avec le mur, false sinon
+     */
     public boolean collidesWith(Wall wall) {
-        return (getX() + getWidth() >= wall.getX()) && (getX() <= (wall.getX() + wall.getWidth()))
-                && (getY() + getHeight() >= wall.getY())
-                && (getY() <= (wall.getY() + wall.getHeight()));
+        float planeRight = getX() + getWidth();
+        float planeBottom = getY() + getHeight();
+        float wallRight = wall.getX() + wall.getWidth();
+        float wallBottom = wall.getY() + wall.getHeight();
+
+        return planeRight >= wall.getX() && getX() <= wallRight && planeBottom >= wall.getY() && getY() <= wallBottom;
     }
 
-    public boolean collidesWith(Plane avion) {
-        return (getX() + getWidth() >= avion.getX()) && (getX() <= (avion.getX() + avion.getWidth()))
-                && (getY() + getHeight() >= avion.getY())
-                && (getY() <= (avion.getY() + avion.getHeight()));
-    }
-
-    // Verification des collisions entre l'avion et le décore
+    /**
+     * Vérifie si l'avion entre en collision avec un zeppelin.
+     *
+     * @param zeppelin Zeppelin à vérifier
+     * @return true si l'avion entre en collision avec le zeppelin, false sinon
+     */
     public boolean collidesWith(Zeppelin zeppelin) {
-        return (getX() + getWidth() >= zeppelin.getX()) && (getX() <= (zeppelin.getX() + zeppelin.getWidth()))
-                && (getY() + getHeight() >= zeppelin.getY()) && (getY() <= (zeppelin.getY() + zeppelin.getHeight()));
+        float planeRight = getX() + getWidth();
+        float planeBottom = getY() + getHeight();
+        float zeppelinRight = zeppelin.getX() + zeppelin.getWidth();
+        float zeppelinBottom = zeppelin.getY() + zeppelin.getHeight();
+
+        return planeRight >= zeppelin.getX() && getX() <= zeppelinRight && planeBottom >= zeppelin.getY() && getY() <= zeppelinBottom;
     }
 
+    /**
+     * Vérifie si l'avion entre en collision avec un autre avion.
+     *
+     * @param other Autre avion à vérifier
+     * @return true si l'avion entre en collision avec l'autre avion, false sinon
+     */
+    public boolean collidesWith(Plane other) {
+        float planeRight = getX() + getWidth();
+        float planeBottom = getY() + getHeight();
+        float otherRight = other.getX() + other.getWidth();
+        float otherBottom = other.getY() + other.getHeight();
+
+        return planeRight >= other.getX() && getX() <= otherRight && planeBottom >= other.getY() && getY() <= otherBottom;
+    }
+
+  /**
+     * Vérifie si l'avion entre en collision avec un projectile.
+     *
+     * @param projectile Projectile à vérifier
+     * @return true si l'avion entre en collision avec le projectile, false sinon
+     */
     public boolean collidesWith(Projectile projectile) {
+        float planeRight = getX() + getWidth();
+        float planeBottom = getY() + getHeight();
 
-        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX()))
-                && (getY() + getHeight() >= projectile.getY()) && (getY() <= (projectile.getY()));
-
+        return planeRight >= projectile.getX() && getX() <= projectile.getX() && planeBottom >= projectile.getY() && getY() <= projectile.getY();
     }
 
-    // verification des collisions avec le Wall
+    /**
+     * Vérifie si l'avion entre en collision avec un mur.
+     * Cette méthode appelle la méthode collidesWith(Wall).
+     *
+     * @param wall Mur à vérifier
+     * @return true si l'avion entre en collision avec le mur, false sinon
+     */
     public boolean checkCollision(Wall wall) {
-        if (collidesWith(wall)) {
-            return true;
-        }
-        return false;
+        return collidesWith(wall);
     }
 
-    // verification des collisions avec les zeppelins
-    public boolean checkCollision(Zeppelin zeppelins) {
-        if (collidesWith(zeppelins)) {
-            return true;
-        }
-        return false;
+    /**
+     * Vérifie si l'avion entre en collision avec un zeppelin.
+     * Cette méthode appelle la méthode collidesWith(Zeppelin).
+     *
+     * @param zeppelin Zeppelin à vérifier
+     * @return true si l'avion entre en collision avec le zeppelin, false sinon
+     */
+    public boolean checkCollision(Zeppelin zeppelin) {
+        return collidesWith(zeppelin);
     }
 
-    public boolean checkCollision(Plane avion) {
-        if (collidesWith(avion)) {
-            return true;
-        }
-        return false;
+    /**
+     * Vérifie si l'avion entre en collision avec un autre avion.
+     * Cette méthode appelle la méthode collidesWith(Plane).
+     *
+     * @param other Autre avion à vérifier
+     * @return true si l'avion entre en collision avec l'autre avion, false sinon
+     */
+    public boolean checkCollision(Plane other) {
+        return collidesWith(other);
     }
 }

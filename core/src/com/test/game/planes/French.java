@@ -1,6 +1,5 @@
 package com.test.game.planes;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Array;
 import com.test.game.shoots.Bullets;
@@ -9,9 +8,9 @@ import com.test.game.shoots.Projectile;
 public class French extends Plane {
 
     float speed;
-    private static int SCORE_VALUE = 1;
+    private static final int SCORE_VALUE = 1;
     private float timeSinceLastShot = 0;
-    private float shootingInterval = 0.5f;
+    private final float shootingInterval = 0.5f;
 
     private final int BULLET_SPEED = 100;
 
@@ -28,7 +27,7 @@ public class French extends Plane {
         setX(getX() - getSpeed());
     }
 
-    // getters et setters
+    // Getters et setters
     private float getSpeed() {
         return speed;
     }
@@ -41,24 +40,27 @@ public class French extends Plane {
         return SCORE_VALUE;
     }
 
+    /**
+     * Fait tirer l'objet French en ajoutant un projectile à la liste des projectiles.
+     *
+     * @param projectiles La liste de projectiles où ajouter le nouveau projectile.
+     */
     public void shoot(Array<Projectile> projectiles) {
-        Bullets bullet = new Bullets(getX(), getY() + this.getHeight() / 2, BULLET_SPEED * getSpeed());// (Bullet speed
-                                                                                                       // * getspped a
-                                                                                                       // fin que le
-                                                                                                       // projectile
-                                                                                                       // soit toujours
-                                                                                                       // plus rapide
-                                                                                                       // que l avion)
+        Bullets bullet = new Bullets(getX(), getY() + this.getHeight() / 2, BULLET_SPEED * getSpeed());
         projectiles.add(bullet);
     }
 
-    public void updateFire(float delta, Array<Projectile> projectiles) {// permet de creer et mettre a jour la position
-                                                                        // des balles
+    /**
+     * Met à jour le tir de l'objet French en générant de nouveaux projectiles.
+     *
+     * @param delta        Le temps écoulé depuis la dernière mise à jour.
+     * @param projectiles  La liste de projectiles où ajouter de nouveaux projectiles.
+     */
+    public void updateFire(float delta, Array<Projectile> projectiles) {
         timeSinceLastShot += delta;
         if (timeSinceLastShot >= shootingInterval) {
-            shoot(projectiles);// on genere le tire
+            shoot(projectiles);
             timeSinceLastShot = 0;
         }
-
     }
 }

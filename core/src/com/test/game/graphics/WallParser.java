@@ -6,7 +6,12 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Array;
 import com.test.game.Test;
 
+/**
+ * La classe WallParser est responsable de l'analyse des fichiers de carte et de la création des objets correspondants.
+ * Elle analyse les symboles dans le fichier et crée des objets de type Wall et d'autres objets en fonction de ces symboles.
+ */
 public class WallParser {
+    // Symboles utilisés dans les fichiers de carte
     private static final char WALL_SYMBOL = '█';
     private static final char HEART_SYMBOL = '♥';
     private static final char GRASS_SYMBOL = '▓';
@@ -16,23 +21,35 @@ public class WallParser {
     private static final char STAR_SYMBOL = '*';
     private static final char SUP_SYMBOL = '>';
 
-    private final Test game;
+    // Chemins vers les fichiers de carte
     private static final String CARET1 = "Map/LatestMap.txt";
     private static final String CARET2 = "Map/carte3.txt";
-    private static final String CARET3 = "Map/MapBoss.txt";
 
+    // Instance du jeu
+    protected final Test game;
+
+    /**
+     * Constructeur de la classe WallParser.
+     *
+     * @param game instance du jeu
+     */
     public WallParser(Test game) {
         this.game = game;
     }
 
-    // Méthode pour analyser le fichier de carte et créer des objets de type Wall et
-    // Zeppelin
+    /**
+     * Analyse le fichier de carte spécifié et crée des objets correspondants.
+     *
+     * @param fileName nom du fichier de carte à analyser
+     * @return un tableau d'objets représentant les éléments de la carte
+     */
     public static Array<Object> parseWalls(String fileName) {
         Array<Object> objects = new Array<>();
 
         FileHandle fileHandle = Gdx.files.internal(fileName);
         String[] lines = fileHandle.readString().split("\\r?\\n");
 
+        // Textures pour les différents types de sol
         Texture dirtTexture = new Texture("Map/dirt.png");
         Texture grassTexture1 = new Texture("Map/grass.jpg");
         Texture grassTexture3 = new Texture("Map/Lava.jpg");
@@ -49,15 +66,19 @@ public class WallParser {
                         objects.add(new Wall(xPos, yPos, dirtTexture));
                         break;
                     case GRASS_SYMBOL:
-                        if (fileName == CARET1) {
-                            objects.add(new Wall(xPos, yPos, grassTexture1));
-                        } else if (fileName == CARET2) {
-                            objects.add(new Wall(xPos, yPos, grassTexture2));
-
-                        } else {
-                            objects.add(new Wall(xPos, yPos, grassTexture3));
+                        switch (fileName) {
+                            case CARET1:
+                                objects.add(new Wall(xPos, yPos, grassTexture1));
+                                break;
+                            case CARET2:
+                                objects.add(new Wall(xPos, yPos, grassTexture2));
+                                break;
+                            default:
+                                objects.add(new Wall(xPos, yPos, grassTexture3));
+                                break;
                         }
                         break;
+
                     case HEART_SYMBOL:
                         objects.add(new Zeppelin(xPos, yPos));
                         break;
@@ -85,10 +106,21 @@ public class WallParser {
         return objects;
     }
 
-    // Méthode pour calculer la largeur totale de la carte
+    /**
+     * Calcule la largeur totale de la carte spécifiée.
+     *
+     * @param fileName nom du fichier de carte
+     * @return la largeur totale de la carte
+     */
     public static int calculateMapWidth(String fileName) {
+        // Récupère le gestionnaire de fichier correspondant au nom de fichier spécifié
         FileHandle fileHandle = Gdx.files.internal(fileName);
+        
+        // Lit le contenu du fichier et le divise en lignes
         String[] lines = fileHandle.readString().split("\\r?\\n");
+        
+        // Retourne la largeur de la première ligne multipliée par la largeur d'une tuile de mur
         return lines[0].length() * Wall.WIDTH;
     }
+
 }

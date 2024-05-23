@@ -4,13 +4,33 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
+/**
+ * La classe Explosion représente une animation d'explosion dans le jeu.
+ * Elle gère la position, le temps écoulé et l'état de l'animation.
+ */
 public class Explosion {
-    private float x, y;
-    private float elapsedTime;
-    private Animation<TextureRegion> animation;
-    private boolean finished;
-    private float mapScrollOffset; // Décalage de défilement de la carte
+    // La coordonnée x de l'explosion
+    private float x;
 
+    // La coordonnée y de l'explosion
+    private final float y;
+
+    // Le temps écoulé depuis le début de l'animation
+    private float elapsedTime;
+
+    // L'animation de l'explosion
+    private final Animation<TextureRegion> animation;
+
+    // Indique si l'animation est terminée
+    private boolean finished;
+
+    /**
+     * Construit une nouvelle Explosion avec la position initiale et l'animation spécifiées.
+     *
+     * @param x la coordonnée x initiale de l'explosion
+     * @param y la coordonnée y initiale de l'explosion
+     * @param animation l'animation de l'explosion
+     */
     public Explosion(float x, float y, Animation<TextureRegion> animation) {
         this.x = x;
         this.y = y;
@@ -19,6 +39,11 @@ public class Explosion {
         this.finished = false;
     }
 
+    /**
+     * Met à jour la position et l'état de l'animation de l'explosion.
+     * 
+     * @param delta le temps écoulé depuis la dernière mise à jour
+     */
     public void update(float delta) {
         x -= 100 * delta;
         elapsedTime += delta;
@@ -27,6 +52,11 @@ public class Explosion {
         }
     }
 
+    /**
+     * Dessine l'animation de l'explosion à l'écran en utilisant le SpriteBatch fourni.
+     * 
+     * @param batch le SpriteBatch utilisé pour dessiner l'animation
+     */
     public void draw(SpriteBatch batch) {
         if (!finished) {
             // Ajouter le décalage de défilement à la position X de l'explosion
@@ -35,14 +65,29 @@ public class Explosion {
         }
     }
 
+    /**
+     * Vérifie si l'animation de l'explosion est terminée.
+     * 
+     * @return true si l'animation est terminée, false sinon
+     */
     public boolean isFinished() {
         return finished;
     }
 
+    /**
+     * Retourne la coordonnée x de l'explosion.
+     * 
+     * @return la coordonnée x de l'explosion
+     */
     public float getX() {
         return x;
     }
 
+    /**
+     * Retourne la coordonnée y de l'explosion.
+     * 
+     * @return la coordonnée y de l'explosion
+     */
     public float getY() {
         return y;
     }

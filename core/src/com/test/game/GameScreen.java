@@ -4,12 +4,13 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -19,9 +20,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.BSpline;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -236,45 +235,72 @@ public class GameScreen implements Screen {
         });
     }
 
+    /**
+     * Met à jour l'état du jeu en générant des ennemis volants et des soutiens de feu
+     * à des intervalles spécifiés.
+     *
+     * Cette méthode vérifie si le temps écoulé depuis le dernier spawn d'ennemi volant ou de soutien de feu
+     * dépasse les intervalles de génération définis. Si les conditions sont remplies, elle génère de nouveaux ennemis.
+     * La génération des ennemis est désactivée si le niveau du boss est actif.
+     */
     public void update() {
-        if (elapsedTime - lastEnemySpawnTime >= FLYING_ENEMY_SPAWN_INTERVAL) {// si la difference entre le temps
-                                                                              // courrant et le temps du dernier
-                                                                              // spawn est superieur au temps de
-            if (BossSlevel == false) {
+        // Vérifie si le temps écoulé depuis le dernier spawn d'ennemi volant est supérieur à l'intervalle de spawn
+        if (elapsedTime - lastEnemySpawnTime >= FLYING_ENEMY_SPAWN_INTERVAL) {
+            // Si ce n'est pas le niveau du boss, crée un ennemi volant
+            if (!BossSlevel) {
                 createFlyingEnemy();
-            } // génération des enemies
-              // System.err.println("elapsed time" + elapsedTime + "derneri spawn" +
-              // lastEnemySpawnTime);
-
-            // System.err.println("yes");
+            }
         }
-        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN && BossSlevel == false) {
+
+        // Vérifie si le temps écoulé depuis le dernier spawn de soutien de feu est supérieur à l'intervalle de spawn
+        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN && !BossSlevel) {
             createSupportEnemy();
         }
     }
 
-    public void MapGeneration() {
-        float delta = Gdx.graphics.getDeltaTime();
-        ScreenUtils.clear(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        batch.begin();
-        if (game.getCurrentMap() == 1) {
-            background = new Texture("BackGroundImages/montains01.jpg"); // image de fond
-        }
-        if (game.getCurrentMap() == 2) {
-            background = new Texture("BackGroundImages/montains02.png");
-        }
-        if (game.getCurrentMap() == 3) {
-            background = new Texture("BackGroundImages/mapBoss.png");
+    /**
+ * Génère et affiche la carte du jeu en fonction du niveau actuel.
+ *
+ * Cette méthode configure l'image de fond en fonction de la carte actuelle,
+ * met à jour et dessine les objets du jeu. Elle est appelée à chaque frame pour
+ * maintenir et afficher l'état courant du jeu.
+ */
+public void MapGeneration() {
+    // Récupère le temps écoulé depuis la dernière frame
+    float delta = Gdx.graphics.getDeltaTime();
+    
+    // Efface l'écran en le remplissant avec une couleur noire
+    ScreenUtils.clear(0, 0, 0, 1);
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        }
-        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        updateObjects(delta);
-        drawObjects();
-
-        batch.end();
+    // Commence le batch pour dessiner les textures
+    batch.begin();
+    
+    // Sélectionne l'image de fond en fonction de la carte actuelle
+    if (game.getCurrentMap() == 1) {
+        background = new Texture("BackGroundImages/montains01.jpg"); // Image de fond pour la carte 1
     }
+    if (game.getCurrentMap() == 2) {
+        background = new Texture("BackGroundImages/montains02.png"); // Image de fond pour la carte 2
+    }
+    if (game.getCurrentMap() == 3) {
+        background = new Texture("BackGroundImages/mapBoss.png"); // Image de fond pour la carte 3 (boss)
+    }
+    
+    // Dessine l'image de fond sur l'écran
+    batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    
+    // Met à jour les objets du jeu avec le temps écoulé
+    updateObjects(delta);
+    
+    // Dessine les objets du jeu
+    drawObjects();
+
+    // Termine le batch
+    batch.end();
+}
+
 
     private void updateObjects(float delta) {
         // Calculer la largeur totale de la carte
@@ -376,287 +402,464 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void checkPlayerCollisions() {
-        // Vérifier les collisions entre le joueur et les murs
-        for (Object object : objects) {
-            if (!player.getGameOver()) {
-                if (object instanceof Wall) {
-                    Wall wall = (Wall) object;
-                    if (player.checkCollision(wall)) {
-                        handlePlayerCollision();
-                    }
-                } else if (object instanceof Zeppelin) {
-                    Zeppelin zeppelins = (Zeppelin) object;
-                    if (player.checkCollision(zeppelins)) {
-                        handlePlayerCollision();
-                    }
-
+    /**
+ * Vérifie les collisions entre le joueur et les différents objets du jeu.
+ *
+ * Cette méthode parcourt les objets de la carte et les ennemis volants pour vérifier
+ * s'il y a des collisions avec le joueur. En cas de collision, des actions spécifiques
+ * sont effectuées, telles que la gestion des collisions, la réduction des points de vie
+ * du joueur ou l'explosion des objets.
+ */
+private void checkPlayerCollisions() {
+    // Vérifier les collisions entre le joueur et les murs
+    for (Object object : objects) {
+        if (!player.getGameOver()) {
+            if (object instanceof Wall) {
+                Wall wall = (Wall) object;
+                // Vérifie la collision entre le joueur et un mur
+                if (player.checkCollision(wall)) {
+                    handlePlayerCollision();
                 }
-                for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie,en effet mort instantanée en
-                                                   // cas de collision
-                    if (player.checkCollision(avion)) {
-                        handlePlayerCollision();
-                    }
+            } else if (object instanceof Zeppelin) {
+                Zeppelin zeppelin = (Zeppelin) object;
+                // Vérifie la collision entre le joueur et un Zeppelin
+                if (player.checkCollision(zeppelin)) {
+                    handlePlayerCollision();
                 }
-                // on gere la collision avec l artillerie
-                for (int i = 0; i < Fire_Support.size; i++) {
-                    if (player.collidesWith(Fire_Support.get(i))) {
-                        player.setHp(player.getHp() - 1);
-                        explode(Fire_Support.get(i).getX(), Fire_Support.get(i).getY());
-                        Fire_Support.removeIndex(i);
-                    }
+            }
+            
+            // Vérifie les collisions entre le joueur et les ennemis volants
+            for (Plane avion : FlyingEnemies) {
+                // Collision entraîne une mort instantanée
+                if (player.checkCollision(avion)) {
+                    handlePlayerCollision();
                 }
-
+            }
+            
+            // Vérifie les collisions entre le joueur et le soutien de feu
+            for (int i = 0; i < Fire_Support.size; i++) {
+                if (player.collidesWith(Fire_Support.get(i))) {
+                    // Réduit les points de vie du joueur en cas de collision
+                    player.setHp(player.getHp() - 1);
+                    // Crée une explosion à la position du soutien de feu
+                    explode(Fire_Support.get(i).getX(), Fire_Support.get(i).getY());
+                    // Retire le soutien de feu après la collision
+                    Fire_Support.removeIndex(i);
+                }
             }
         }
+    }
+}
 
+
+    /**
+ * Vérifie s'il y a une collision entre un avion et les obstacles de la carte
+ * lors du spawn.
+ *
+ * Cette méthode est utilisée pour détecter les collisions entre un avion
+ * et les murs de la carte lors du processus de spawn de l'avion. Elle permet
+ * de s'assurer que l'avion n'apparaît pas à l'intérieur ou en collision avec
+ * des obstacles dès son apparition.
+ *
+ * @param avion L'avion à vérifier s'il entre en collision avec les murs lors du spawn.
+ * @return true s'il y a une collision avec un mur ou avec le joueur, sinon false.
+ */
+public boolean checkCollisionSpawn(Plane avion) {
+    // Parcours des objets de la carte pour vérifier les collisions lors du spawn
+    for (Object object : objects) {
+        // Vérification des collisions avec les murs de la carte
+        if (object instanceof Wall) {
+            Wall mur = (Wall) object;
+            // Si l'avion entre en collision avec un mur, retourne true
+            if (avion.checkCollision(mur)) {
+                return true;
+            }
+        }
     }
 
-    public boolean checkCollisionSpawn(Plane avion) {// on gere la collisoin des enemies seulment lors du spawn
-        for (Object object : objects) {
-            if (object instanceof Wall) {
-                Wall mur = (Wall) object;
-                if (avion.checkCollision(mur)) {
+    // Vérification de la collision avec le joueur
+    if (player.checkCollision(avion)) {
+        return true;
+    }
+    
+    // Si aucune collision n'est détectée, retourne false
+    return false;
+}
+
+    /**
+ * Vérifie s'il y a une collision entre un avion ennemi et les obstacles de la carte.
+ *
+ * Cette méthode est utilisée pour détecter les collisions entre un avion ennemi
+ * et les murs de la carte ainsi que le joueur. Elle prend en compte les caractéristiques
+ * spécifiques des avions ennemis, tels que l'invulnérabilité des avions britanniques
+ * aux obstacles de terrain.
+ *
+ * @param avion L'avion ennemi à vérifier s'il entre en collision avec les obstacles de la carte.
+ * @return true s'il y a une collision avec un mur (pour les avions français), sinon false.
+ */
+public boolean checkEnemyCollision(Plane avion) {
+    // Parcours des objets de la carte pour vérifier les collisions avec les murs
+    for (Object object : objects) {
+        // Vérification des collisions avec les murs de la carte
+        if (object instanceof Wall) {
+            Wall mur = (Wall) object;
+            // Si l'avion entre en collision avec un mur
+            if (avion.checkCollision(mur)) {
+                // Pour les avions britanniques (British), ajuste la position en cas de collision avec un mur
+                if (avion instanceof British) {
+                    // Le British est invulnérable au terrain, ajuste sa position verticale
+                    avion.setY(avion.getY() + 20);
+                    // Aucune collision n'est rapportée
+                    return false;
+                }
+                // Pour les avions français (French), rapporte la collision avec un mur
+                if (avion instanceof French) {
                     return true;
                 }
             }
-
         }
-        if (player.checkCollision(avion)) {
-            return true;
-        }
-        return false;
     }
 
-    public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des enemies seulment
-        for (Object object : objects) {
-            if (object instanceof Wall) {
-                Wall mur = (Wall) object;
-                if (avion.checkCollision(mur)) {
-                    if (avion instanceof British) {// en effet le british est invunérable au terrain,il ne le percute
-                                                   // jamais
-                        avion.setY(avion.getY() + 20);
-                        return false;
-                    }
-                    if (avion instanceof French) {// le French meurt lorsque il rentre dans le terrain
-                        return true;
-                    }
-                }
-            }
-
-        }
-        if (player.checkCollision(avion)) {
-            return true;
-        }
-        return false;
-    }
-
-    /*
-     * public boolean checkEnemyCollision(Plane avion) {// on gere la collisoin des
-     * enemies seulment
-     * for (Object object : objects) {
-     * if (object instanceof Wall) {
-     * Wall mur = (Wall) object;
-     * if (avion.checkCollision(mur)) {
-     * return true;
-     * }
-     * }
-     * 
-     * }
-     * if (player.checkCollision(avion)) {
-     * return true;
-     * }
-     * return false;
-     * }
-     */
-    public boolean checkBuffSpawn(Buff buff) {
-        for (Object objet : objects) {
-            if (objet instanceof Wall) {
-                Wall tempo = (Wall) objet;
-                if (buff.collidesWith(tempo)) {
-                    return false;
-                }
-            }
-        }
+    // Vérification de la collision avec le joueur
+    if (player.checkCollision(avion)) {
         return true;
     }
+    
+    // Si aucune collision n'est détectée avec un mur ou le joueur, retourne false
+    return false;
+}
 
-    public void handleBuffSpawn() {
 
-        if (buffitem != null) {
-            buffitem.draw(batch);
-            buffitem.update();
-            if (player.collidesWithBuff(buffitem)) {
-                if (buffitem instanceof Heart) {
-                    player.setHp(player.getHp() + 1);
-                    buffitem = null;
-                }
+  
+   /**
+ * Vérifie s'il est possible de faire spawn un bonus à une certaine position sans collision avec les obstacles.
+ *
+ * Cette méthode est utilisée pour déterminer s'il est possible de faire spawn un bonus à une position donnée
+ * sans qu'il y ait de collision avec les murs de la carte. Elle retourne true si la position spécifiée pour
+ * le spawn du bonus est dégagée, sinon elle retourne false.
+ *
+ * @param buff Le bonus à vérifier pour le spawn.
+ * @return true si la position spécifiée est dégagée pour le spawn du bonus, sinon false.
+ */
+public boolean checkBuffSpawn(Buff buff) {
+    // Parcours des objets de la carte pour vérifier les collisions avec les murs
+    for (Object objet : objects) {
+        // Vérification des collisions avec les murs de la carte
+        if (objet instanceof Wall) {
+            Wall mur = (Wall) objet;
+            // Si le bonus entre en collision avec un mur
+            if (buff.collidesWith(mur)) {
+                // La position spécifiée pour le spawn du bonus n'est pas dégagée, retourne false
+                return false;
             }
-
         }
-        if (buffitem != null) {
-            if (buffitem.getX() < 10) {
+    }
+    
+    // La position spécifiée pour le spawn du bonus est dégagée, retourne true
+    return true;
+}
+
+    /**
+ * Gère le spawn et l'interaction des bonus (buffs) avec le joueur.
+ *
+ * Cette méthode est responsable du spawn aléatoire des bonus sur la carte, de leur affichage,
+ * de leur mise à jour et de leur interaction avec le joueur. Elle prend également en charge la
+ * vérification de la collision des bonus avec les obstacles de la carte et la gestion des effets
+ * des différents types de bonus sur le joueur.
+ */
+public void handleBuffSpawn() {
+    // Affichage et mise à jour du bonus actuel s'il existe
+    if (buffitem != null) {
+        buffitem.draw(batch);
+        buffitem.update();
+        
+        // Vérification de la collision du joueur avec le bonus actuel
+        if (player.collidesWithBuff(buffitem)) {
+            // Si le joueur entre en collision avec le bonus actuel
+            if (buffitem instanceof Heart) {
+                // Si le bonus est un coeur, augmente les points de vie du joueur
+                player.setHp(player.getHp() + 1);
+                // Supprime le bonus après qu'il a été collecté
                 buffitem = null;
             }
         }
-        if (elapsedTime - lastBuffSpawnTime > BUFF_SPAWN_TIME && buffitem == null) {// il ne doit pas y avoir plus d un
-                                                                                    // buff sur la map
+    }
+    
+    // Supprime le bonus s'il sort de la carte
+    if (buffitem != null && buffitem.getX() < 10) {
+        buffitem = null;
+    }
+    
+    // Vérifie si le temps écoulé depuis le dernier spawn de bonus dépasse le temps de spawn spécifié
+    if (elapsedTime - lastBuffSpawnTime > BUFF_SPAWN_TIME && buffitem == null) {
+        // Si le temps de spawn est écoulé et qu'il n'y a pas de bonus actuellement sur la carte
+        // Génère un nouveau bonus de type "Heart" à une position aléatoire sur la carte
+        buffitem = new Heart(MathUtils.random(100, 400), MathUtils.random(100, 400));
+        
+        // Vérifie si la position du nouveau bonus est dégagée des obstacles de la carte
+        while (!checkBuffSpawn(buffitem)) {
+            // Si la position n'est pas dégagée, génère une nouvelle position aléatoire pour le bonus
             buffitem = new Heart(MathUtils.random(100, 400), MathUtils.random(100, 400));
-            while (checkBuffSpawn(buffitem) == false) {
-                buffitem = new Heart(MathUtils.random(100, 400), MathUtils.random(100, 400));
-            }
-            lastBuffSpawnTime = elapsedTime;
         }
-
+        
+        // Met à jour le temps du dernier spawn de bonus
+        lastBuffSpawnTime = elapsedTime;
     }
+}
 
-    // cette fonction va gerer les avoins lorsque ils se prennent des degats
-    public void handleDamagedFlyingEnemy() {
-        for (Projectile tire : projectiles) {
-            for (Plane avion : FlyingEnemies) {
-                if (avion.collidesWith(tire) && (tire instanceof SolAir) == false) {// on verifie que l enemeie est
-                                                                                    // touche mais pas par une defense
-                                                                                    // aerienne
-                    avion.setHp(avion.getHp() - 1);// on diminue la vie
-                    tire.setHit(true);
-                    if (avion.getHp() == 0) {
-                        // avion.setIsDeadByFireHit(true);
-                        // System.err.println("mort par tire");
-                        if (avion instanceof French) {
-                            game.ScoreTotale += French.getScoreValue();
-                            game.BasicEnemyDeath++;
-                        }
-                        if (avion instanceof British) {
-                            game.ScoreTotale += British.getScoreValue();
-                        }
-                    }
-                }
-            }
-        }
-    }
 
-    private void handlePlayerHealth() {
-        if (player.getHp() == 0) {
-            explode(player.getX(), player.getY());
-            player.setGameOver(true);
-        }
-    }
-
-    private void handlePlayerCollision() {
-        // Produire l'animation d'explosion pour le joueur
-        explode(player.getX(), player.getY());
-        player.setGameOver(true); // Marquer le jeu comme terminé
-    }
-
-    public void handleEnemyCollision() {// cette fonction gere la mort d un enemie
+   /**
+ * Gère les dommages infligés aux avions ennemis par les projectiles.
+ *
+ * Cette méthode parcourt tous les projectiles présents sur la carte et vérifie s'ils entrent en collision
+ * avec des avions ennemis. Si un avion ennemi est touché par un projectile, ses points de vie sont réduits.
+ * Si les points de vie de l'avion ennemi atteignent 0, il est considéré comme détruit et des actions spécifiques
+ * sont entreprises en fonction de son type.
+ */
+public void handleDamagedFlyingEnemy() {
+    // Parcours de tous les projectiles sur la carte
+    for (Projectile tire : projectiles) {
+        // Parcours de tous les avions ennemis sur la carte
         for (Plane avion : FlyingEnemies) {
-            if (checkEnemyCollision(avion)) {
-                explode(avion.getX(), avion.getY());
-                avion.setHp(0);
-            }
-        }
-        handleAntiAirCollisions();
-    }
-
-    private void handleAntiAirCollisions() {// on gere la collison des anti air avec les bombes largues par l enemie
-        for (int i = 0; i < projectiles.size; i++) {
-            Projectile projectile = projectiles.get(i);
-            if (projectile instanceof Bomb) {
-                for (Object object : objects) {
-                    if (object instanceof AntiAir) {
-                        AntiAir antiAir = (AntiAir) object;
-                        if (antiAir.collidesWith(projectile)) {
-                            // Créer une explosion à la position de l'anti-air
-                            explode(antiAir.getX(), antiAir.getY());
-                            game.ScoreTotale += AntiAir.getScoreValue();// on modifie le score
-                            if (game.getCurrentMap() == 2) {
-                                game.AntiAirDeath++;
-                            }
-                            // Retirer l'anti-air et le projectile de leurs listes respectives
-                            objects.removeValue(antiAir, true);
-                            projectiles.removeIndex(i);
-                            i--; // Réajuster l'index après suppression
-                            break; // Sortir de la boucle pour ce projectile
-                        }
+            // Vérification de la collision entre l'avion ennemi et le projectile, excluant les défenses aériennes
+            if (avion.collidesWith(tire) && !(tire instanceof SolAir)) {
+                // Réduction des points de vie de l'avion ennemi
+                avion.setHp(avion.getHp() - 1);
+                // Marquage du projectile comme touché
+                tire.setHit(true);
+                
+                // Vérification si l'avion ennemi est détruit
+                if (avion.getHp() == 0) {
+                    // Actions spécifiques en fonction du type d'avion ennemi
+                    if (avion instanceof French) {
+                        // Si l'avion ennemi est de type French, ajoute son score à celui du jeu
+                        game.ScoreTotale += French.getScoreValue();
+                        // Incrémente le compteur de morts des ennemis basiques
+                        game.BasicEnemyDeath++;
+                    } else if (avion instanceof British) {
+                        // Si l'avion ennemi est de type British, ajoute son score à celui du jeu
+                        game.ScoreTotale += British.getScoreValue();
                     }
                 }
             }
         }
     }
+}
 
-    private boolean bombCollision(Bomb bomb) {
-        // Parcourir tous les murs de la carte pour vérifier la collision avec la bombe
-        for (Object object : objects) {
-            if (object instanceof Wall) {
-                Wall wall = (Wall) object;
-                // Vérifier si la bombe entre en collision avec le mur
-                if (bomb.getX() + Bomb.WIDTH >= wall.getX() && bomb.getX() <= wall.getX() + Wall.WIDTH
-                        && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
-                    return true; // Collision détectée avec un mur
+
+    /**
+ * Gère la santé du joueur.
+ *
+ * Cette méthode vérifie si le joueur n'a plus de points de vie. Si tel est le cas,
+ * elle déclenche une explosion au niveau de la position actuelle du joueur et marque
+ * le jeu comme terminé.
+ */
+private void handlePlayerHealth() {
+    // Vérification si le joueur n'a plus de points de vie
+    if (player.getHp() == 0) {
+        // Déclenche une explosion au niveau de la position actuelle du joueur
+        explode(player.getX(), player.getY());
+        // Marque le jeu comme terminé
+        player.setGameOver(true);
+    }
+}
+
+/**
+ * Gère la collision du joueur avec les obstacles ou les ennemis.
+ *
+ * Cette méthode est appelée lorsqu'une collision est détectée entre le joueur et un obstacle
+ * ou un ennemi. Elle déclenche une animation d'explosion au niveau de la position actuelle du joueur
+ * et marque le jeu comme terminé.
+ */
+private void handlePlayerCollision() {
+    // Produire l'animation d'explosion pour le joueur au niveau de sa position actuelle
+    explode(player.getX(), player.getY());
+    // Marquer le jeu comme terminé
+    player.setGameOver(true);
+}
+
+/**
+ * Gère la collision des avions ennemis avec les obstacles ou le joueur.
+ *
+ * Cette méthode parcourt tous les avions ennemis sur la carte et vérifie s'ils entrent en collision
+ * avec des obstacles ou le joueur. Si une collision est détectée, elle déclenche une explosion au niveau
+ * de la position de l'avion ennemi et met à jour son état pour indiquer qu'il a été détruit.
+ */
+public void handleEnemyCollision() {
+    // Parcours de tous les avions ennemis sur la carte
+    for (Plane avion : FlyingEnemies) {
+        // Vérification de la collision avec les obstacles ou le joueur
+        if (checkEnemyCollision(avion)) {
+            // Déclenche une explosion au niveau de la position de l'avion ennemi
+            explode(avion.getX(), avion.getY());
+            // Met à jour l'état de l'avion ennemi pour indiquer qu'il a été détruit
+            avion.setHp(0);
+        }
+    }
+    // Gestion des collisions avec l'artillerie anti-aérienne
+    handleAntiAirCollisions();
+}
+
+   /**
+ * Gère les collisions entre les projectiles largués par les ennemis et les défenses anti-aériennes.
+ *
+ * Cette méthode parcourt tous les projectiles largués par les ennemis sur la carte et vérifie s'ils entrent
+ * en collision avec les défenses anti-aériennes. Si une collision est détectée, elle déclenche une explosion
+ * à la position de la défense anti-aérienne, met à jour le score du jeu en fonction de la valeur de l'anti-air,
+ * et retire l'anti-air ainsi que le projectile de leurs listes respectives.
+ */
+private void handleAntiAirCollisions() {
+    // Parcours de tous les projectiles largués par les ennemis sur la carte
+    for (int i = 0; i < projectiles.size; i++) {
+        Projectile projectile = projectiles.get(i);
+        // Vérification si le projectile est une bombe
+        if (projectile instanceof Bomb) {
+            // Parcours de tous les objets sur la carte pour trouver les défenses anti-aériennes
+            for (Object object : objects) {
+                // Vérification si l'objet est une défense anti-aérienne
+                if (object instanceof AntiAir) {
+                    AntiAir antiAir = (AntiAir) object;
+                    // Vérification de la collision entre l'anti-air et le projectile
+                    if (antiAir.collidesWith(projectile)) {
+                        // Création d'une explosion à la position de l'anti-air
+                        explode(antiAir.getX(), antiAir.getY());
+                        // Mise à jour du score du jeu en fonction de la valeur de l'anti-air
+                        game.ScoreTotale += AntiAir.getScoreValue();
+                        // Si la carte actuelle est la carte 2, incrémentation du compteur de décès des défenses anti-aériennes
+                        if (game.getCurrentMap() == 2) {
+                            game.AntiAirDeath++;
+                        }
+                        // Retrait de l'anti-air et du projectile de leurs listes respectives
+                        objects.removeValue(antiAir, true);
+                        projectiles.removeIndex(i);
+                        i--; // Réajustement de l'index après suppression
+                        break; // Sortie de la boucle pour ce projectile
+                    }
                 }
             }
         }
-        return false; // Aucune collision détectée avec un mur
     }
+}
 
-    private void explode(float x, float y) {
-        explosions.add(new Explosion(x, y, explosionAnimation));
-    }
 
-    private void drawObjects() {
-        // Dessiner tous les objets, même si le jeu est terminé
-        for (Object object : objects) {
-            if (object instanceof Wall) {
-                Wall wall = (Wall) object;
-                wall.draw(batch);
-            } else if (object instanceof Zeppelin) {
-                Zeppelin zep = (Zeppelin) object;
-                zep.draw(batch);
-            }
-            if (object instanceof AntiAir) {
-                AntiAir air = (AntiAir) object;
-                air.draw(batch);
-            }
-            if (object instanceof Bush) {
-                Bush bush = (Bush) object;
-                bush.draw(batch);
-            }
-            if (object instanceof Panzer) {
-                Panzer panzer = (Panzer) object;
-                panzer.draw(batch);
-            }
-            if (object instanceof Arbre) {
-                Arbre arbre = (Arbre) object;
-                arbre.draw(batch);
-            }
-            if (object instanceof Rock) {
-                Rock rock = (Rock) object;
-                rock.draw(batch);
+    /**
+ * Vérifie s'il y a une collision entre une bombe et un mur sur la carte.
+ *
+ * Cette méthode parcourt tous les murs de la carte et vérifie s'il y a une collision
+ * entre la bombe spécifiée et l'un des murs. Si une collision est détectée, la méthode
+ * renvoie true ; sinon, elle renvoie false.
+ *
+ * @param bomb La bombe pour laquelle vérifier la collision avec les murs.
+ * @return true s'il y a une collision entre la bombe et un mur, sinon false.
+ */
+private boolean bombCollision(Bomb bomb) {
+    // Parcours de tous les murs de la carte pour vérifier la collision avec la bombe
+    for (Object object : objects) {
+        if (object instanceof Wall) {
+            Wall wall = (Wall) object;
+            // Vérification si la bombe entre en collision avec le mur
+            if (bomb.getX() + Bomb.WIDTH >= wall.getX() && bomb.getX() <= wall.getX() + Wall.WIDTH
+                    && bomb.getY() + Bomb.HEIGHT >= wall.getY() && bomb.getY() <= wall.getY() + Wall.HEIGHT) {
+                return true; // Collision détectée avec un mur
             }
         }
     }
+    return false; // Aucune collision détectée avec un mur
+}
 
-    private void createBullet() {
-        Bullets bullet = new Bullets(player.getX() + player.getWidth(), player.getY() + player.getHeight() / 2, 300f);
-        projectiles.add(bullet);
-    }
+/**
+ * Crée une explosion à la position spécifiée sur la carte.
+ *
+ * Cette méthode crée une explosion à la position spécifiée avec les coordonnées
+ * x et y en ajoutant une instance de l'explosion à la liste des explosions.
+ *
+ * @param x La coordonnée x de la position de l'explosion.
+ * @param y La coordonnée y de la position de l'explosion.
+ */
+private void explode(float x, float y) {
+    // Ajout d'une nouvelle instance d'explosion à la liste des explosions
+    explosions.add(new Explosion(x, y, explosionAnimation));
+}
 
-    private void createBomb() {
-        Bomb bomb = new Bomb(player.getX() + player.getWidth() / 2, player.getY(), 200f);
-        projectiles.add(bomb);
-    }
-
-    private void drawProjectiles() {
-        batch.begin();
-        for (Projectile projectile : projectiles) {
-            projectile.draw(batch);
+   /**
+ * Dessine tous les objets sur la carte.
+ *
+ * Cette méthode parcourt tous les objets sur la carte et les dessine sur le lot de rendu (batch)
+ * associé. Elle prend en charge différents types d'objets tels que les murs, les zeppelins, les défenses
+ * anti-aériennes, les buissons, les Panzers, les arbres et les rochers.
+ */
+private void drawObjects() {
+    // Dessiner tous les objets, même si le jeu est terminé
+    for (Object object : objects) {
+        // Vérifier le type de l'objet et le dessiner en conséquence
+        if (object instanceof Wall) {
+            Wall wall = (Wall) object;
+            wall.draw(batch); // Dessiner le mur
+        } else if (object instanceof Zeppelin) {
+            Zeppelin zep = (Zeppelin) object;
+            zep.draw(batch); // Dessiner le zeppelin
+        } else if (object instanceof AntiAir) {
+            AntiAir air = (AntiAir) object;
+            air.draw(batch); // Dessiner la défense anti-aérienne
+        } else if (object instanceof Bush) {
+            Bush bush = (Bush) object;
+            bush.draw(batch); // Dessiner le buisson
+        } else if (object instanceof Panzer) {
+            Panzer panzer = (Panzer) object;
+            panzer.draw(batch); // Dessiner le Panzer
+        } else if (object instanceof Arbre) {
+            Arbre arbre = (Arbre) object;
+            arbre.draw(batch); // Dessiner l'arbre
+        } else if (object instanceof Rock) {
+            Rock rock = (Rock) object;
+            rock.draw(batch); // Dessiner le rocher
         }
-        for (Projectile tire : enemyProjectiles) {
-            tire.draw(batch);
-        }
-        batch.end();
-
     }
+}
+
+   /**
+ * Crée un nouveau projectile de type bullet à partir de la position actuelle du joueur.
+ * 
+ * Cette méthode crée un nouveau projectile de type bullet à partir de la position actuelle du joueur
+ * en ajoutant une instance de la classe Bullets à la liste des projectiles.
+ */
+private void createBullet() {
+    // Création d'un nouveau projectile bullet à partir de la position du joueur
+    Bullets bullet = new Bullets(player.getX() + player.getWidth(), player.getY() + player.getHeight() / 2, 300f);
+    projectiles.add(bullet); // Ajout du projectile à la liste des projectiles
+}
+
+/**
+ * Crée un nouveau projectile de type bomb à partir de la position actuelle du joueur.
+ * 
+ * Cette méthode crée un nouveau projectile de type bomb à partir de la position actuelle du joueur
+ * en ajoutant une instance de la classe Bomb à la liste des projectiles.
+ */
+private void createBomb() {
+    // Création d'un nouveau projectile bomb à partir de la position du joueur
+    Bomb bomb = new Bomb(player.getX() + player.getWidth() / 2, player.getY(), 200f);
+    projectiles.add(bomb); // Ajout du projectile à la liste des projectiles
+}
+
+/**
+ * Dessine tous les projectiles sur l'écran.
+ * 
+ * Cette méthode parcourt la liste des projectiles et dessine chacun d'eux sur le lot de rendu (batch).
+ * Elle prend également en charge le dessin des projectiles ennemis.
+ */
+private void drawProjectiles() {
+    batch.begin(); // Début du lot de rendu
+    // Dessin de tous les projectiles du joueur
+    for (Projectile projectile : projectiles) {
+        projectile.draw(batch);
+    }
+    // Dessin de tous les projectiles ennemis
+    for (Projectile tire : enemyProjectiles) {
+        tire.draw(batch);
+    }
+    batch.end(); // Fin du lot de rendu
+}
+
 
     private void updateProjectiles(float delta) {
         // Parcourir les projectiles du joueur
@@ -754,270 +957,331 @@ public class GameScreen implements Screen {
         }
     }
 
-    public void createFlyingEnemy()
-
-    {
-
-        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
-        if (game.getCurrentMap() == 1) {
+    /**
+ * Crée un nouvel ennemi volant.
+ * 
+ * Cette méthode génère un nouvel ennemi volant en fonction de la carte actuelle du jeu. Sur la première carte, uniquement des ennemis de type French sont générés. Sur la deuxième carte, des ennemis de type French et British peuvent être générés en fonction d'un ratio défini. L'ennemi est créé avec des coordonnées aléatoires sur l'axe Y et ajouté à la liste des ennemis volants.
+ */
+public void createFlyingEnemy() {
+    // Génération de coordonnées aléatoires sur l'axe Y pour le spawn de l'ennemi
+    ENEMY_SPAWN_LEVEL_Y = MathUtils.random(50, Gdx.graphics.getHeight() - 50);
+    
+    // Génération de l'ennemi en fonction de la carte actuelle du jeu
+    if (game.getCurrentMap() == 1) {
+        // Sur la première carte, seulement des ennemis de type French sont générés
+        enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
+    } else if (game.getCurrentMap() == 2) {
+        // Sur la deuxième carte, des ennemis de type French et British peuvent être générés en fonction d'un ratio défini
+        if (MathUtils.random(1, 100) > ENEMY_SPAWN_RATIO) {
+            // Générer un ennemi de type French
+            spawnType = 1;
             enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
                     FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
-        }
-        if (game.getCurrentMap() == 2) {// le 2eme type d enemies apprait uniquement sur la 2eme carte et aleatoirment
-            if (MathUtils.random(1, 100) > ENEMY_SPAWN_RATIO) {
-                spawnType = 1;
-                enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
-            } else {
-
-                spawnType = 2;
-                enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
-
-            }
-        }
-        while (checkCollisionSpawn(enemyspawn)) {
-            ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
-            if (spawnType == 1) {
-                enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
-            }
-            if (spawnType == 2) {// on ne spawn le type d enemies british ssi on est sur la
-                                 // 2eme map
-                enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
-                        BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
-            }
-        }
-        FlyingEnemies.add(enemyspawn);
-        lastEnemySpawnTime = elapsedTime;
-    }
-
-    public void createSupportEnemy() {
-        Fire_Support.add(new Artillery(MathUtils.random(30, Gdx.graphics.getWidth() - 30), Gdx.graphics.getHeight(), 50,
-                20, FIRE_SUPPORT_SPEED));
-        lastShellSpawnTime = elapsedTime;
-    }
-
-    public void spawnFlyingEnemy(Plane avion) { // Fonction permettant de dessiner un ennemi
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-        avion.update();
-        avion.draw(batch);
-        shape.end();
-    }
-
-    public void UpdateSupportEnemy() {
-        Iterator<Artillery> iter = Fire_Support.iterator();
-        while (iter.hasNext()) {
-            Artillery fire = iter.next();
-            fire.update();
-            if (fire.getY() < 0) {
-                iter.remove();
-            }
-        }
-        for (Artillery fire : Fire_Support) {
-            SpawnFlyingEnemy(fire);
+        } else {
+            // Générer un ennemi de type British
+            spawnType = 2;
+            enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                    BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
         }
     }
-
-    public void SpawnFlyingEnemy(Plane avion) {// fonction permet de dessiner un enemi
-        // avion.setStartY(ENEMY_SPAWN_LEVEL_X);
-        // sshape.begin(ShapeRenderer.ShapeType.Filled);
-        batch.begin();
-        avion.draw(batch);
-        batch.end();
-        // on obtient le temps courrent durant le jeu
-    }
-
-    public void UpdateFlyingEnemy() {
-
-        // cette fonction gere les mouvemnts et l'état des enemies
-        handleDamagedFlyingEnemy();
-        Iterator<Plane> iter = FlyingEnemies.iterator();
-        while (iter.hasNext()) {
-            Plane avion = iter.next();
-            // avion.Xspeed = 300;
-            // avion.update();// on met a jour la position de l enemie a chaque fois
-            if (avion instanceof French) {
-                BasicEnemy = (French) avion;
-                BasicEnemy.update();
-                BasicEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
-            }
-            if (avion instanceof British) {
-                AdvancedEnemy = (British) avion;
-                AdvancedEnemy.update();
-                AdvancedEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
-            }
-            if (avion.getX() < 20) {
-                // createFlyingEnemy();
-                iter.remove();
-            }
-            if (avion.getHp() == 0) {
-                explode(avion.getX(), avion.getY());
-                iter.remove();
-
-            }
-            // on va gerer le score
-
-        }
-        // cette boucle permet d afficher les enemies
-        for (Plane avion : FlyingEnemies) {
-            // SpawnFlyingEnemy(avion);
-            if (avion instanceof French) {
-                BasicEnemy = (French) avion;
-                SpawnFlyingEnemy(BasicEnemy);
-            }
-            if (avion instanceof British) {
-                AdvancedEnemy = (British) avion;
-                SpawnFlyingEnemy(avion);
-            }
-        }
-
-    }
-
-    private void renderExplosions(float delta) {
-        batch.begin();
-        for (int i = 0; i < explosions.size; i++) {
-            Explosion explosion = explosions.get(i);
-            explosion.update(delta);// on met a jour la position de l explosion
-            explosion.draw(batch);
-            if (explosion.isFinished()) {
-                explosions.removeIndex(i);
-                i--; // Réajuster l'index après suppression
-            }
-        }
-        batch.end();
-    }
-
-    @Override
-    public void render(float delta) {
-        // Effacer l'écran
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        // buffitem = new Heart(200, 200);
-        // Dessiner la carte
-        MapGeneration();
-
-        // Si le jeu n'est pas terminé
-        if (player.getGameOver() == false) {
-            elapsedTime = TimeUtils.timeSinceMillis(startTime);// on recuperer le temps depuis le début de la partie
-            // System.err.println("temps passe" + elapsedTime);
-            // System.out.println("dernier spawn" + lastShellSpawnTime);
-            this.update();
-            // createFlyingEnemy();
-            // System.err.println("taille" + FlyingEnemies.size);
-            renderGamePlay();
-            UpdateFlyingEnemy();
-            UpdateSupportEnemy();
-            handleEnemyCollision();
-        }
-
-        if (player.getGameOver() == true) {
-            renderGameOver();
-        }
-
-        // Mettre à jour et dessiner les projectiles
-        updateProjectiles(delta);
-        drawProjectiles();
-        // System.out.println(enemyProjectiles.size + "taille");
-        // Dessiner les explosions
-        if (!player.getGameOver()) {
-            renderExplosions(delta);
-        }
-        if (game.getCurrentMap() == 1 && game.BasicEnemyDeath == BASIC_DEATH_REQ) {
-            renderWin();
-        }
-        if (game.getCurrentMap() == 2 && game.AntiAirDeath == ANTI_AIR_REQ) {
-            renderWin();
+    
+    // Vérification de collision avec d'autres ennemis ou des objets du décor
+    while (checkCollisionSpawn(enemyspawn)) {
+        // Regénération des coordonnées Y si une collision est détectée
+        ENEMY_SPAWN_LEVEL_Y = MathUtils.random(100, Gdx.graphics.getHeight());
+        if (spawnType == 1) {
+            // Regénérer un ennemi de type French
+            enemyspawn = new French(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                    FRENCH_ENEMY_SPEED, TEXTURE_FRENCH);
+        } else if (spawnType == 2) {
+            // Regénérer un ennemi de type British
+            enemyspawn = new British(Gdx.graphics.getWidth() - 30, ENEMY_SPAWN_LEVEL_Y, 40, 40,
+                    BRITISH_ENEMY_SPEED, TEXTURE_BRITISH);
         }
     }
+    
+    // Ajout de l'ennemi à la liste des ennemis volants et mise à jour du temps de spawn
+    FlyingEnemies.add(enemyspawn);
+    lastEnemySpawnTime = elapsedTime;
+}
 
-    private void renderGamePlay() {
-        // Mettre à jour et dessiner le joueur
-        // Heart coeur = new Heart(200, 200);
-        batch.begin();
-        player.update();
-        handleBuffSpawn();
-        player.draw(batch);
-        player.drawHealth(batch);
-        objective = game.getCurrentMap() != 2 ? ("French killed :" + game.BasicEnemyDeath)
-                : ("Anti-Air destroyed :" + game.AntiAirDeath);
-        if (game.getCurrentMap() == 3) {
-            objective = "Boss Heakth :" + boss.getHp();
-        }
-        FontObjective.draw(batch, objective, 20, Gdx.graphics.getHeight() - 50);
-        scoreFont.draw(batch, "Score :" + game.ScoreTotale, 20, Gdx.graphics.getHeight() - 30);
-        if (BossSlevel && boss.getHp() > 0) {
-            boss.update(Gdx.graphics.getDeltaTime(), player, enemyProjectiles);
-            boss.draw(batch);
-        }
-        if (BossSlevel && boss.getHp() == 0) {
-            game.jeuScreen.sonJeu.dispose();
-            game.menu = new MenuScreen(game);
-            game.menu.sonMenu.loop();
-            game.setScreen(game.menu);
-        }
-        batch.end();
 
-        checkPlayerCollisions();
-        handlePlayerHealth();
+    /**
+ * Crée un nouvel ennemi de soutien (artillerie).
+ * 
+ * Cette méthode génère un nouvel ennemi de soutien (artillerie) avec des coordonnées aléatoires sur l'axe X et en haut de l'écran sur l'axe Y. L'ennemi est créé avec des dimensions spécifiées et une vitesse définie, puis ajouté à la liste des ennemis de soutien. Le temps de la dernière apparition de coquille est également mis à jour.
+ */
+public void createSupportEnemy() {
+    Fire_Support.add(new Artillery(MathUtils.random(30, Gdx.graphics.getWidth() - 30), Gdx.graphics.getHeight(), 50,
+            20, FIRE_SUPPORT_SPEED));
+    lastShellSpawnTime = elapsedTime;
+}
 
+/**
+ * Dessine un ennemi volant.
+ * 
+ * Cette méthode permet de dessiner un ennemi volant en utilisant la classe ShapeRenderer pour dessiner sa forme, puis en appelant la méthode de dessin de l'ennemi lui-même.
+ * 
+ * @param avion L'ennemi à dessiner.
+ */
+public void spawnFlyingEnemy(Plane avion) {
+    shape.begin(ShapeRenderer.ShapeType.Filled);
+    avion.update();
+    avion.draw(batch);
+    shape.end();
+}
+
+/**
+ * Met à jour les ennemis de soutien.
+ * 
+ * Cette méthode met à jour la position de chaque ennemi de soutien dans la liste des ennemis de soutien. Si un ennemi de soutien sort de l'écran, il est supprimé de la liste. Ensuite, pour chaque ennemi de soutien restant, la méthode appelle la fonction de dessin appropriée.
+ */
+public void UpdateSupportEnemy() {
+    Iterator<Artillery> iter = Fire_Support.iterator();
+    while (iter.hasNext()) {
+        Artillery fire = iter.next();
+        fire.update();
+        if (fire.getY() < 0) {
+            iter.remove();
+        }
+    }
+    for (Artillery fire : Fire_Support) {
+        SpawnFlyingEnemy(fire);
+    }
+}
+
+/**
+ * Dessine un ennemi volant.
+ * 
+ * Cette méthode permet de dessiner un ennemi volant en utilisant le lot de rendu (batch). Elle appelle la méthode de dessin de l'ennemi pour chaque ennemi dans la liste des ennemis de soutien.
+ * 
+ * @param avion L'ennemi à dessiner.
+ */
+public void SpawnFlyingEnemy(Plane avion) {
+    batch.begin();
+    avion.draw(batch);
+    batch.end();
+}
+
+
+    /**
+ * Met à jour les ennemis volants.
+ * 
+ * Cette méthode gère les mouvements et l'état des ennemis volants. Elle parcourt la liste des ennemis volants et met à jour chaque ennemi. Si un ennemi est endommagé et atteint 0 points de vie, il est supprimé de la liste et une explosion est déclenchée à sa position. De plus, si un ennemi atteint la limite gauche de l'écran, il est également supprimé de la liste. Ensuite, la méthode parcourt à nouveau la liste pour afficher chaque ennemi volant à l'écran.
+ */
+public void UpdateFlyingEnemy() {
+    // Gère les dégâts infligés aux ennemis volants
+    handleDamagedFlyingEnemy();
+    
+    Iterator<Plane> iter = FlyingEnemies.iterator();
+    while (iter.hasNext()) {
+        Plane avion = iter.next();
+        if (avion instanceof French) {
+            BasicEnemy = (French) avion;
+            BasicEnemy.update();
+            BasicEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
+        }
+        if (avion instanceof British) {
+            AdvancedEnemy = (British) avion;
+            AdvancedEnemy.update();
+            AdvancedEnemy.updateFire(Gdx.graphics.getDeltaTime(), enemyProjectiles);
+        }
+        // Si l'ennemi atteint la limite gauche de l'écran, il est supprimé de la liste
+        if (avion.getX() < 20) {
+            iter.remove();
+        }
+        // Si l'ennemi est détruit (0 points de vie), il est supprimé de la liste et une explosion est déclenchée
+        if (avion.getHp() == 0) {
+            explode(avion.getX(), avion.getY());
+            iter.remove();
+        }
+    }
+    // Affiche chaque ennemi volant à l'écran
+    for (Plane avion : FlyingEnemies) {
+        if (avion instanceof French) {
+            BasicEnemy = (French) avion;
+            SpawnFlyingEnemy(BasicEnemy);
+        }
+        if (avion instanceof British) {
+            AdvancedEnemy = (British) avion;
+            SpawnFlyingEnemy(avion);
+        }
+    }
+}
+
+
+   /**
+ * Affiche les explosions à l'écran.
+ * 
+ * Cette méthode parcourt la liste des explosions et les affiche à l'écran. Elle met également à jour la position de chaque explosion en fonction du temps écoulé depuis la dernière mise à jour. Si une explosion est terminée (c'est-à-dire si son animation est terminée), elle est supprimée de la liste.
+ * 
+ * @param delta Le temps écoulé depuis la dernière mise à jour, en secondes.
+ */
+private void renderExplosions(float delta) {
+    batch.begin();
+    for (int i = 0; i < explosions.size; i++) {
+        Explosion explosion = explosions.get(i);
+        // Met à jour la position de l'explosion en fonction du temps écoulé
+        explosion.update(delta);
+        // Affiche l'explosion à l'écran
+        explosion.draw(batch);
+        // Si l'explosion est terminée, elle est supprimée de la liste
+        if (explosion.isFinished()) {
+            explosions.removeIndex(i);
+            i--; // Réajuster l'index après suppression
+        }
+    }
+    batch.end();
+}
+
+
+    /**
+ * Méthode de rendu principal appelée à chaque frame.
+ * 
+ * Efface l'écran, dessine la carte, met à jour le jeu en cours (si le jeu n'est pas terminé), rend le gameplay (y compris les ennemis et les objets), met à jour et dessine les projectiles, gère les collisions avec les ennemis, rend les explosions (si le jeu n'est pas terminé), et affiche l'écran de fin de partie si le joueur a perdu ou a accompli les conditions de victoire pour la carte actuelle.
+ * 
+ * @param delta Le temps écoulé depuis la dernière frame, en secondes.
+ */
+@Override
+public void render(float delta) {
+    // Effacer l'écran
+    Gdx.gl.glClearColor(0, 0, 0, 1);
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    
+    // Dessiner la carte
+    MapGeneration();
+
+    // Si le jeu n'est pas terminé
+    if (!player.getGameOver()) {
+        elapsedTime = TimeUtils.timeSinceMillis(startTime);
+        this.update();
+        renderGamePlay();
+        UpdateFlyingEnemy();
+        UpdateSupportEnemy();
+        handleEnemyCollision();
     }
 
-    private void renderGameOver() {
-        // Afficher l'animation d'explosion
-        if (!explosionStarted) {
-            explosionX = player.getX();
-            explosionY = player.getY();
-            explosionStarted = true;
-        }
-
-        batch.begin();
-        explosionElapsedTime += Gdx.graphics.getDeltaTime();
-        TextureRegion currentFrame = explosionAnimation.getKeyFrame(explosionElapsedTime, false);
-        batch.draw(currentFrame, explosionX, explosionY, player.getWidth(), player.getHeight());
-        batch.end();
-
-        if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
-            // Animation terminée, ne rien dessiner
-            game.jeuScreen.sonJeu.dispose();
-            game.overScreen = new GameOverScreen(game);// on va afficher l'ecran du gameover
-            game.setScreen(game.overScreen);
-            game.overScreen.sonDeath.play();
-            try {
-                // game.writer.write(score);
-                writer.write(String.valueOf("\n" + score));// on convertit le score en chaine
-
-                // writer.write("hah");
-                writer.close();
-
-            } catch (IOException e) {
-                // System.out.println("e");
-            }
-            dispose();
-        }
-
+    // Si le jeu est terminé
+    if (player.getGameOver()) {
+        renderGameOver();
     }
 
-    public void renderWin() {
-        // game.jeuScreen.sonJeu.dispose();
-        WinLevelScreen ecran = new WinLevelScreen(game);
-        game.WinScreen = ecran;
-        // score = score;
-        game.setScreen(game.WinScreen);
-        // score = 0;// temporairment on met le score a 0
+    // Mettre à jour et dessiner les projectiles
+    updateProjectiles(delta);
+    drawProjectiles();
 
+    // Dessiner les explosions si le jeu n'est pas terminé
+    if (!player.getGameOver()) {
+        renderExplosions(delta);
+    }
+
+    // Afficher l'écran de victoire si les conditions sont remplies
+    if (game.getCurrentMap() == 1 && game.BasicEnemyDeath == BASIC_DEATH_REQ) {
+        renderWin();
+    }
+    if (game.getCurrentMap() == 2 && game.AntiAirDeath == ANTI_AIR_REQ) {
+        renderWin();
+    }
+}
+
+
+   /**
+ * Méthode de rendu du gameplay principal.
+ * 
+ * Met à jour et dessine le joueur, gère la génération et l'affichage des buffs, affiche le score et l'objectif en cours (nombre d'ennemis tués ou d'anti-aériens détruits), met à jour et dessine le boss si présent sur la carte, et vérifie les collisions du joueur avec les différents éléments du jeu.
+ */
+private void renderGamePlay() {
+    // Mettre à jour et dessiner le joueur
+    batch.begin();
+    player.update();
+    handleBuffSpawn();
+    player.draw(batch);
+    player.drawHealth(batch);
+    // Afficher l'objectif en cours
+    objective = game.getCurrentMap() != 2 ? ("French killed :" + game.BasicEnemyDeath)
+            : ("Anti-Air destroyed :" + game.AntiAirDeath);
+    if (game.getCurrentMap() == 3) {
+        objective = "Boss Health :" + boss.getHp();
+    }
+    FontObjective.draw(batch, objective, 20, Gdx.graphics.getHeight() - 50);
+    scoreFont.draw(batch, "Score :" + game.ScoreTotale, 20, Gdx.graphics.getHeight() - 30);
+    // Mettre à jour et dessiner le boss si présent sur la carte
+    if (BossSlevel && boss.getHp() > 0) {
+        boss.update(Gdx.graphics.getDeltaTime(), player, enemyProjectiles);
+        boss.draw(batch);
+    }
+    // Si le boss est vaincu, retourner au menu principal
+    if (BossSlevel && boss.getHp() == 0) {
+        game.jeuScreen.sonJeu.dispose();
+        game.menu = new MenuScreen(game);
+        game.menu.sonMenu.loop();
+        game.setScreen(game.menu);
+    }
+    batch.end();
+
+    // Vérifier les collisions du joueur
+    checkPlayerCollisions();
+    // Vérifier la santé du joueur
+    handlePlayerHealth();
+}
+
+
+    /**
+ * Méthode de rendu de l'écran de fin de partie en cas de défaite.
+ * 
+ * Affiche une animation d'explosion centrée sur la position du joueur, puis affiche l'écran de fin de partie et enregistre le score dans un fichier. Une fois l'animation terminée, arrête la lecture de la musique de jeu et passe à l'écran de fin de partie.
+ */
+private void renderGameOver() {
+    // Afficher l'animation d'explosion
+    if (!explosionStarted) {
+        explosionX = player.getX();
+        explosionY = player.getY();
+        explosionStarted = true;
+    }
+
+    batch.begin();
+    explosionElapsedTime += Gdx.graphics.getDeltaTime();
+    TextureRegion currentFrame = explosionAnimation.getKeyFrame(explosionElapsedTime, false);
+    batch.draw(currentFrame, explosionX, explosionY, player.getWidth(), player.getHeight());
+    batch.end();
+
+    if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
+        // Animation terminée, ne rien dessiner
+        game.jeuScreen.sonJeu.dispose();
+        game.overScreen = new GameOverScreen(game);// on va afficher l'ecran du gameover
+        game.setScreen(game.overScreen);
+        game.overScreen.sonDeath.play();
         try {
-            // game.writer.write(score);
-            writer.write(String.valueOf("\n" + game.ScoreTotale));// on convertit le score en chaine
-
-            // writer.write("hah");
+            writer.write(String.valueOf("\n" + score));// on convertit le score en chaine
             writer.close();
-
         } catch (IOException e) {
-            // System.out.println("e");
+            // Gérer l'exception
         }
-
+        dispose();
     }
+}
+
+
+    /**
+ * Méthode de rendu de l'écran de victoire.
+ * 
+ * Affiche l'écran de victoire et enregistre le score dans un fichier. Passe à l'écran de victoire une fois l'enregistrement terminé.
+ */
+public void renderWin() {
+    WinLevelScreen ecran = new WinLevelScreen(game);
+    game.WinScreen = ecran;
+
+    game.setScreen(game.WinScreen);
+
+    try {
+        writer.write(String.valueOf("\n" + game.ScoreTotale)); // on convertit le score en chaine
+        writer.close();
+    } catch (IOException e) {
+        // Gérer l'exception
+    }
+}
+
 
     @Override
     public void dispose() {
