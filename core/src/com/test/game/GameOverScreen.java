@@ -28,9 +28,18 @@ public class GameOverScreen implements Screen {
         this.game = game;
         camera = new OrthographicCamera();
         camera.setToOrtho(false, VIEW_PORT_WIDTH, VIEW_PORT_HEIGHT);
-        game.ScoreTotale = 0;
         game.BasicEnemyDeath = 0;
         game.AntiAirDeath = 0;
+        if (game.getCurrentMap() == 3) {
+            if (game.boss.TatePlaying == true) {
+                game.boss.sonTate.dispose();
+
+            }
+            if (game.boss.TourPlaying == true) {
+                game.boss.sonTour.dispose();
+            }
+        }
+        game.ScoreTotale = 0;
         game.setCurrentMap(1);
     }
 
@@ -47,6 +56,7 @@ public class GameOverScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
         camera.update();
+
         game.batch.begin();
         draw(game.batch);
         game.batch.end();

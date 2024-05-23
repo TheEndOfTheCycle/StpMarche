@@ -9,6 +9,8 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+import com.test.game.planes.BossFinale;
+import com.test.game.planes.Red;
 
 public class Test extends Game {
     Sound sonJeu;
@@ -18,13 +20,15 @@ public class Test extends Game {
     public GameOverScreen overScreen;
     public WinLevelScreen WinScreen;
     public HowToPlayScreen HowToPlayScreen;
+    public Red player;
+    public BossFinale boss;
     // le score du jeu
     public int ScoreTotale = 0;
     public int BasicEnemyDeath = 0;
     public int AntiAirDeath = 0;
     // Lire le score
     private final Array<Screen> screens = new Array<>();
-    private int CurrentMap = 3;// cette variable determine la map a cree lors du lancment du jeux
+    private int CurrentMap = 1;// cette variable determine la map a cree lors du lancment du jeux
     // Son des musiques
     public static float MUSIC_VOLUME = 0.2f;
 

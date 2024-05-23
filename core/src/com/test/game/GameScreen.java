@@ -165,6 +165,7 @@ public class GameScreen implements Screen {
             boss = new BossFinale(Gdx.graphics.getWidth() - BossFinale.FINAL_WIDTH, // on spawn le boss si on est au
                     // niveau 3
                     Gdx.graphics.getHeight() / 2 - BossFinale.FINAL_HEIGHT / 2, game);
+            game.boss = boss;
         }
         sonJeu.loop(SOUND_VOLUME);// on lance la musique des que le jeu commence
         this.game = game;
@@ -187,6 +188,7 @@ public class GameScreen implements Screen {
         FontObjective = new BitmapFont();
         // objects = WallParser.parseWalls("Map/test.txt");
         player = new Red(PLAYER_START_LINE_X, PLAYER_START_LINE_Y);
+        game.player = player;
         FlyingEnemies = new Array<>();
         TEXTURE_FRENCH = new Texture(Gdx.files.internal("Planes/french.png"));
         TEXTURE_BRITISH = new Texture(Gdx.files.internal("Planes/british.png"));
@@ -1303,6 +1305,7 @@ public class GameScreen implements Screen {
             game.menu.sonMenu.loop();
             game.setScreen(game.menu);
         }
+
         batch.end();
 
         // Vérifier les collisions du joueur
@@ -1335,16 +1338,16 @@ public class GameScreen implements Screen {
 
         if (explosionAnimation.isAnimationFinished(explosionElapsedTime)) {
             // Animation terminée, ne rien dessiner
-            game.jeuScreen.sonJeu.dispose();
-            game.overScreen = new GameOverScreen(game);// on va afficher l'ecran du gameover
-            game.setScreen(game.overScreen);
-            game.overScreen.sonDeath.play();
             try {
-                writer.write(String.valueOf("\n" + score));// on convertit le score en chaine
+                writer.write(String.valueOf("\n" + game.ScoreTotale));// on convertit le score en chaine
                 writer.close();
             } catch (IOException e) {
                 // Gérer l'exception
             }
+            game.jeuScreen.sonJeu.dispose();
+            game.overScreen = new GameOverScreen(game);// on va afficher l'ecran du gameover
+            game.setScreen(game.overScreen);
+            game.overScreen.sonDeath.play();
             dispose();
         }
     }

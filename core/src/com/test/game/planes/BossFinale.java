@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Array;
+import com.test.game.GameOverScreen;
 import com.test.game.Test;
 import com.test.game.shoots.AmungUs;
 import com.test.game.shoots.Projectile;
@@ -20,7 +21,7 @@ public class BossFinale extends Plane {
     private static final Texture TEXTURE_BOSS2 = new Texture(Gdx.files.internal("Planes/Andrew.png"));
     private static final Texture TEXTURE_BOSS3 = new Texture(Gdx.files.internal("Planes/tower.png"));
     // son
-    Sound sonTate = Gdx.audio.newSound(Gdx.files.internal("Music/Tate-theme.mp3"));
+    public Sound sonTate = Gdx.audio.newSound(Gdx.files.internal("Music/Tate-theme.mp3"));
     public boolean TatePlaying = false;
     public Sound sonTour = Gdx.audio.newSound(Gdx.files.internal("Music/America.mp3"));
     public boolean TourPlaying = false;
@@ -35,7 +36,7 @@ public class BossFinale extends Plane {
     private float timeSinceLastAmungUsShot = 0.0f;
     private float timeSinceLastTateShot = 0.0f;
     private float totalTime = 0.0f;
-    public static final int LIFE = 101;
+    public static final int LIFE = 200;
     // Variable de controle
     Test game;
     // Intervalles de tir pour chaque type de projectile
@@ -175,6 +176,7 @@ public class BossFinale extends Plane {
         if (totalTime >= 40.0f) {
             totalTime = 0.0f;
         }
+
     }
 
     @Override
@@ -213,6 +215,7 @@ public class BossFinale extends Plane {
             if (TourPlaying == false) {
                 sonTate.dispose();
                 sonTour.loop();
+                TatePlaying = false;
                 TourPlaying = true;
             }
             setTexture(TEXTURE_BOSS3);

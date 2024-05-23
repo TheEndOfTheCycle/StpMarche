@@ -3,5 +3,5 @@ Welcome to our game :
 
 To shoot press the left key button 
 To drop Bombes press the space button
-To get to Stage2 you need to kill 2 french planes
+To get to Stage2 you need to kill 10 french planes
 To get to Stage3 you need to kill 2 antiairdefenses
