@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.test.game.planes.Red;
 
 public class MenuScreen implements Screen {
@@ -23,7 +24,9 @@ public class MenuScreen implements Screen {
     final Test game;
 
     OrthographicCamera camera;
-
+    long elapsedTime;
+    long startTime;
+    long lastDrawTime;
     final int VIEW_PORT_WIDTH = 800;
     final int VIEW_PORT_HEIGHT = 480;
     BufferedReader reader;
@@ -113,14 +116,17 @@ public class MenuScreen implements Screen {
         } else {
             ScoreFont.draw(game.batch, MSG_ABSENCE_SCORE, HIGH_SCORE_X, HIGH_SCORE_Y);
         }
+
         Start.draw(game.batch, "Start: Press enter to Start", START_X, START_Y);
+        lastDrawTime = elapsedTime;
         HowToPlay.draw(batch, "How to play : Press H to learn how to play", HOW_TO_PLAY_X, HOW_TO_PLAY_Y);
     }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
-
+        startTime = TimeUtils.millis();
+        elapsedTime = TimeUtils.timeSinceMillis(startTime);
         camera.update();
         game.batch.begin();
         handleMenu();

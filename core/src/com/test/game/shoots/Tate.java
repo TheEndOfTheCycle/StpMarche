@@ -40,6 +40,6 @@ public class Tate extends Projectile {
 
     @Override
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y);
+        batch.draw(texture, x, y, getWidth(), getHeight());
     }
 }

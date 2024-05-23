@@ -31,6 +31,10 @@ import com.test.game.buffs.Buff;
 import com.test.game.buffs.Heart;
 import com.test.game.explosion.Explosion;
 import com.test.game.graphics.AntiAir;
+import com.test.game.graphics.Arbre;
+import com.test.game.graphics.Bush;
+import com.test.game.graphics.Panzer;
+import com.test.game.graphics.Rock;
 import com.test.game.graphics.Wall;
 import com.test.game.graphics.WallParser;
 import com.test.game.graphics.Zeppelin;
@@ -44,6 +48,7 @@ import com.test.game.shoots.AmungUs;
 import com.test.game.shoots.Bomb;
 import com.test.game.shoots.Bullets;
 import com.test.game.shoots.Projectile;
+import com.test.game.shoots.Snake;
 import com.test.game.shoots.SolAir;
 import com.test.game.shoots.Tate;
 import com.test.game.shoots.Trump;
@@ -224,7 +229,7 @@ public class GameScreen implements Screen {
                 }
                 if (game.getScreen().getClass() == GameScreen.class) {// pour declencher l
 
-                    player.sonBomb.play(SHOOTING_VOULME);
+                    // player.sonBomb.play(SHOOTING_VOULME);
                 }
                 return true;
             }
@@ -243,8 +248,8 @@ public class GameScreen implements Screen {
 
             // System.err.println("yes");
         }
-        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN) {
-            // createSupportEnemy();
+        if (elapsedTime - lastShellSpawnTime >= FIRE_SUPPORT_SPAWN && BossSlevel == false) {
+            createSupportEnemy();
         }
     }
 
@@ -261,7 +266,7 @@ public class GameScreen implements Screen {
             background = new Texture("BackGroundImages/montains02.png");
         }
         if (game.getCurrentMap() == 3) {
-            background = new Texture("BackGroundImages/montains03.jpg");
+            background = new Texture("BackGroundImages/mapBoss.png");
 
         }
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -315,6 +320,57 @@ public class GameScreen implements Screen {
                     groundEnemy.update(delta, player, enemyProjectiles);// on fait tirer l enemie qui suit la position
                                                                         // du
                     // joueur
+                } else if (object instanceof Bush) {
+                    Bush bush = (Bush) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = bush.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    bush.setX(newX);
+                } else if (object instanceof Arbre) {
+                    Arbre arbre = (Arbre) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = arbre.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    arbre.setX(newX);
+
+                } else if (object instanceof Panzer) {
+                    Panzer panzer = (Panzer) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = panzer.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    panzer.setX(newX);
+
+                } else if (object instanceof Rock) {
+                    Rock rock = (Rock) object;
+                    // Mettre à jour les coordonnées X pour faire défiler de gauche à droite
+                    float newX = rock.getX() - scrollSpeed * delta;
+
+                    // Réinitialiser la position lorsque la carte entière a défilé hors de l'écran
+                    if (newX < -AntiAir.RED_WIDTH) {
+                        newX += mapWidth;
+                    }
+
+                    // Mettre à jour la position du mur
+                    rock.setX(newX);
+
                 }
             }
         }
@@ -334,15 +390,7 @@ public class GameScreen implements Screen {
                     if (player.checkCollision(zeppelins)) {
                         handlePlayerCollision();
                     }
-                } else if (object instanceof Bomb) {
-                    Bomb bomb = (Bomb) object;
-                    // Vérifier la collision entre la bombe et les éléments de la carte
-                    if (bombCollision(bomb)) {
-                        // Produire l'animation d'explosion
-                        explode(bomb.getX(), bomb.getY());
-                        // Retirer la bombe de la liste
-                        objects.removeValue(bomb, true);
-                    }
+
                 }
                 for (Plane avion : FlyingEnemies) {// on check si on rentre dans un enemie,en effet mort instantanée en
                                                    // cas de collision
@@ -569,6 +617,22 @@ public class GameScreen implements Screen {
                 AntiAir air = (AntiAir) object;
                 air.draw(batch);
             }
+            if (object instanceof Bush) {
+                Bush bush = (Bush) object;
+                bush.draw(batch);
+            }
+            if (object instanceof Panzer) {
+                Panzer panzer = (Panzer) object;
+                panzer.draw(batch);
+            }
+            if (object instanceof Arbre) {
+                Arbre arbre = (Arbre) object;
+                arbre.draw(batch);
+            }
+            if (object instanceof Rock) {
+                Rock rock = (Rock) object;
+                rock.draw(batch);
+            }
         }
     }
 
@@ -595,61 +659,99 @@ public class GameScreen implements Screen {
     }
 
     private void updateProjectiles(float delta) {
-        for (int i = 0; i < projectiles.size; i++) {
+        // Parcourir les projectiles du joueur
+        for (int i = projectiles.size - 1; i >= 0; i--) {
             Projectile projectile = projectiles.get(i);
-            projectile.update(delta);// on gere les projectiles du joueur
-            if (projectile.isOutOfScreen() || projectile.getHit() == true) {
+            projectile.update(delta);
+            if (projectile.isOutOfScreen() || projectile.getHit()) {
                 projectiles.removeIndex(i);
+                continue;
             }
-            // Vérifier les collisions avec les murs
+            // on gere la collisoin des projectiles avec le boss
+            // Vérifier les collisions avec le boss
+            if (boss != null && boss.collidesWithProj(projectile)) {
+                // Réduire la santé du boss en fonction des dégâts du projectile
+                boss.setHp(boss.getHp() - 1);
+                System.out.println("hpppp : " + boss.getHp());
+                // Marquer le projectile comme touché pour le retirer plus tard
+                projectiles.removeIndex(i);
+                if (boss.getHp() == 0) {
+                    explode(boss.getX() + (boss.getWidth() / 2), boss.getY() + (boss.getHeight() / 2));
+
+                }
+                continue;
+            }
+            // Vérifier les collisions avec les murs pour les bombes
             if (projectile instanceof Bomb) {
                 Bomb bomb = (Bomb) projectile;
                 if (bombCollision(bomb)) {
-                    // Collision détectée avec un mur, retirer la bombe
                     explode(bomb.getX() - scrollSpeed * delta, bomb.getY());
                     projectiles.removeIndex(i);
-                    // Ne pas dessiner l'explosion ici, laissez-le à la méthode render
-                    continue; // Passer à la prochaine boucle car cette bombe est retirée
+                    continue;
                 }
             }
-
         }
-        // on gere les projectiles enemies
-        for (int i = 0; i < enemyProjectiles.size; i++) {
+
+        // Parcourir les projectiles des ennemis
+        for (int i = enemyProjectiles.size - 1; i >= 0; i--) {
             Projectile tire = enemyProjectiles.get(i);
+
             if (tire instanceof Bullets) {
                 Bullets balle = (Bullets) tire;
                 balle.updateForEnemy(delta);
-            }
-            if (tire instanceof SolAir) {// on vérifie si c est une AntiAir qui attaque
+            } else if (tire instanceof SolAir) {
                 SolAir tireAir = (SolAir) tire;
                 tireAir.update(delta);
-            }
-            if (tire instanceof Trump) {
+            } else if (tire instanceof Trump) {
                 Trump tempo = (Trump) tire;
                 tempo.update(delta);
-
-            }
-            if (tire instanceof AmungUs) {
+            } else if (tire instanceof AmungUs) {
                 AmungUs tempo = (AmungUs) tire;
                 tempo.update(delta);
-            }
-            if (tire instanceof Tate) {
+            } else if (tire instanceof Tate) {
                 Tate tempo = (Tate) tire;
                 tempo.update(delta);
+            } else if (tire instanceof Snake) {
+                Snake tempo = (Snake) tire;
+                tempo.update(delta);
             }
-            if (tire.isOutOfScreen()) {// le tire sort de l ecran
+
+            if (tire.isOutOfScreen()) {
                 enemyProjectiles.removeIndex(i);
-                break;// on a fini le traitment de la balle donc on sort
+                continue;
             }
-            if (player.collidesWith(tire)) {// on check si le tire touche le joueur si c est le cas on reduit la sante
-                                            // du joueur de 1
+
+            // Vérifier les collisions avec le joueur
+            if (player.collidesWith(tire)) {
                 player.setHp(player.getHp() - 1);
                 enemyProjectiles.removeIndex(i);
-                // System.out.println("ouiiiiiiiiiiiii");
+                continue;
+            }
+            // on gerer les collisons avec le boss
+            if (tire instanceof AmungUs && player.collidesWithProj((AmungUs) tire)) {
+                player.setHp(player.getHp() - 1);
+                enemyProjectiles.removeIndex(i);
+                continue;
+            }
+
+            if (tire instanceof Trump && player.collidesWithProj((Trump) tire)) {
+                player.setHp(player.getHp() - 1);
+                enemyProjectiles.removeIndex(i);
+                continue;
+            }
+
+            if (tire instanceof Tate && player.collidesWithProj((Tate) tire)) {
+                player.setHp(player.getHp() - 1);
+                enemyProjectiles.removeIndex(i);
+                continue;
+            }
+
+            if (tire instanceof SolAir && player.collidesWithProj((SolAir) tire)) {
+                player.setHp(player.getHp() - 1);
+                enemyProjectiles.removeIndex(i);
+                continue;
             }
         }
-
     }
 
     public void createFlyingEnemy()
@@ -840,13 +942,19 @@ public class GameScreen implements Screen {
         objective = game.getCurrentMap() != 2 ? ("French killed :" + game.BasicEnemyDeath)
                 : ("Anti-Air destroyed :" + game.AntiAirDeath);
         if (game.getCurrentMap() == 3) {
-            objective = "Kill Boss";
+            objective = "Boss Heakth :" + boss.getHp();
         }
         FontObjective.draw(batch, objective, 20, Gdx.graphics.getHeight() - 50);
         scoreFont.draw(batch, "Score :" + game.ScoreTotale, 20, Gdx.graphics.getHeight() - 30);
-        if (BossSlevel) {
+        if (BossSlevel && boss.getHp() > 0) {
             boss.update(Gdx.graphics.getDeltaTime(), player, enemyProjectiles);
             boss.draw(batch);
+        }
+        if (BossSlevel && boss.getHp() == 0) {
+            game.jeuScreen.sonJeu.dispose();
+            game.menu = new MenuScreen(game);
+            game.menu.sonMenu.loop();
+            game.setScreen(game.menu);
         }
         batch.end();
 

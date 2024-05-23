@@ -1,18 +1,16 @@
 package com.test.game.shoots;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class Trump extends Projectile {
     private float angle;
-    public int HEIGHT = 30;
-    public int WIDTH = 30;
-    ShapeRenderer shape;
+
+    private final static int WIDTH = 80;
+    private final static int HEIGHT = 80;
 
     public Trump(float x, float y, float speed, float angle) {
         super(x, y, speed, "Amo/trump.png");
         this.angle = angle;
-
     }
 
     @Override
@@ -23,13 +21,7 @@ public class Trump extends Projectile {
 
     @Override
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y);
-        // drawFollow(shape);
-    }
-
-    public void drawFollow(ShapeRenderer shape) {
-        shape.rect(getX(), getY(), WIDTH, HEIGHT);
-
+        batch.draw(texture, x, y, WIDTH, HEIGHT);
     }
 
 }

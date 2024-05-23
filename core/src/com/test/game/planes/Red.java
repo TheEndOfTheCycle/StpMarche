@@ -5,6 +5,8 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.test.game.buffs.Buff;
+import com.test.game.shoots.AmungUs;
+import com.test.game.shoots.Projectile;
 
 public class Red extends Plane {
 
@@ -15,13 +17,12 @@ public class Red extends Plane {
     private static int health_spread_x;
     public Texture HealthTexture;
     public Sound sonTire = Gdx.audio.newSound(Gdx.files.internal("SoundEffects/Shot.mp3"));
-    public Sound sonBomb = Gdx.audio.newSound(Gdx.files.internal("SoundEffects/Bomb.mp3"));
 
     // Constructeur de la classe
     public Red(int x, int y) {
         super(x, y, RED_WIDTH, RED_HEIGHT, TEXTURE_RED);
         HealthTexture = new Texture(Gdx.files.internal("Ui/health_shape.png"));
-        setHp(3);
+        setHp(55);
     }
 
     public void update() {
@@ -68,6 +69,14 @@ public class Red extends Plane {
         return (getX() + getWidth() >= buffitem.getX()) && (getX() <= (buffitem.getX() + buffitem.getWidth()))
                 && (getY() + getHeight() >= buffitem.getY())
                 && (getY() <= (buffitem.getY() + buffitem.getHeight()));
+
+    }
+
+    public boolean collidesWithProj(Projectile projectile) {
+
+        return (getX() + getWidth() >= projectile.getX()) && (getX() <= (projectile.getX() + projectile.getWidth()))
+                && (getY() + getHeight() >= projectile.getY())
+                && (getY() <= (projectile.getY() + projectile.getHeight()));
 
     }
 }

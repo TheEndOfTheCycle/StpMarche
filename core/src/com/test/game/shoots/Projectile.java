@@ -9,6 +9,8 @@ public abstract class Projectile {
     protected final float speed;
     protected Texture texture;
     protected boolean hit = false;// cette variable permet de vérifier si un projectile a touchee sa cible ou pas
+    private static int width = 40;
+    private static int height = 40;
 
     public Projectile(float x, float y, float speed, String texturePath) {
         this.x = x;
@@ -20,7 +22,7 @@ public abstract class Projectile {
     public abstract void update(float delta);
 
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y);
+        batch.draw(texture, x, y, width, height);
     }
 
     public boolean isOutOfScreen() {// on verifie si le projectile sort de l'ecran
@@ -33,6 +35,14 @@ public abstract class Projectile {
 
     public float getY() {
         return y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 
     public void dispose() {

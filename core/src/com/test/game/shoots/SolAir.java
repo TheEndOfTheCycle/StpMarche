@@ -21,7 +21,6 @@ public class SolAir extends Projectile {
     @Override
     public void draw(SpriteBatch batch) {
         // Dessiner le projectile ici
-        batch.draw(texture, x, y, 50, 50);
+        batch.draw(texture, x, y, getWidth(), getHeight());
     }
-
 }

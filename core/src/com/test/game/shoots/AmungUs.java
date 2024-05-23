@@ -3,7 +3,7 @@ package com.test.game.shoots;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class AmungUs extends Projectile {
-    
+
     public AmungUs(float x, float y, float speed) {
         super(x, y, speed, "Amo/amungUs.png");
     }
@@ -16,7 +16,7 @@ public class AmungUs extends Projectile {
 
     @Override
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y);
+        batch.draw(texture, x, y, getWidth(), getHeight());
     }
 
 }
