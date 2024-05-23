@@ -24,7 +24,7 @@ public class Test extends Game {
     public int AntiAirDeath = 0;
     // Lire le score
     private final Array<Screen> screens = new Array<>();
-    private int CurrentMap = 1;// cette variable determine la map a cree lors du lancment du jeux
+    private int CurrentMap = 3;// cette variable determine la map a cree lors du lancment du jeux
     // Son des musiques
     public static float MUSIC_VOLUME = 0.2f;
 

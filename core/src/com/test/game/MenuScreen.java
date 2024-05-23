@@ -43,6 +43,10 @@ public class MenuScreen implements Screen {
     final int START_Y = 160;
     final Color SCORE_COLOR = Color.RED;
     final int OFFSET_TITLE = 200;
+    private boolean drawn = true;
+    private float dissapearTime;
+    private final float APPEAR_DISSAPEAR = 1.0f;
+
     final String MSG_ABSENCE_SCORE = "pas encore de score";
     Sound sonMenu;// son du menu
 
@@ -114,9 +118,10 @@ public class MenuScreen implements Screen {
         } else {
             ScoreFont.draw(game.batch, MSG_ABSENCE_SCORE, HIGH_SCORE_X, HIGH_SCORE_Y);
         }
+        if (drawn) {// si c est vrai on dessine on attend que dissapear>appear_dissapear
+            Start.draw(game.batch, "Start: Press enter to Start", START_X, START_Y);
+        }
 
-        Start.draw(game.batch, "Start: Press enter to Start", START_X, START_Y);
-        lastDrawTime = elapsedTime;
         HowToPlay.draw(batch, "How to play : Press H to learn how to play", HOW_TO_PLAY_X, HOW_TO_PLAY_Y);
     }
 
@@ -138,6 +143,12 @@ public class MenuScreen implements Screen {
         Start.getData().setScale(OPTIONS_FONT_SIZE);
         HowToPlay.getData().setScale(OPTIONS_FONT_SIZE - 0.5f);
         draw(game.batch);
+        dissapearTime += delta;// delta represent le temps passe depuis le dernier frame
+        if (dissapearTime >= APPEAR_DISSAPEAR) {
+            drawn = !drawn;
+            dissapearTime = 0;
+        }
+
         game.batch.end();
 
         // Si l'utilisateur touche l'écran, démarrer le jeu
